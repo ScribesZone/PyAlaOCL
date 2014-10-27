@@ -76,11 +76,13 @@ print a.select(Attribute.isModifiable)
 
 __all__ = (
     'floor',
+
     'isUndefined',
     'oclIsUndefined',
     'Invalid',
     'oclIsKindOf',
     'oclIsTypeOf',
+
     'Collection',
     'Set',
     'Bag',
@@ -88,9 +90,11 @@ __all__ = (
     'asSet',
     'asBag',
     'asSeq',
+
     'isCollection',
     'asCollection',
     'emptyCollection',
+
     'listAll',
 )
 
@@ -1465,7 +1469,7 @@ class Bag(Collection):
         return not self.__eq__(value)
 
     def __hash__(self):
-        return hash(self.theCounter.items())
+        return hash(tuple(self.theCounter.items()))
 
     def __iter__(self):
         """ Make Bags iterable for pythonic usage.
