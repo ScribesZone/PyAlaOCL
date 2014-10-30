@@ -7,7 +7,7 @@ setup(
   author = 'megaplanet',
   author_email = 'megaplanet@megaplanet.org',
   url = 'https://github.com/megaplanet/AlaOCL/',
-  download_url = 'https://github.com/megaplanet/AlaOCL/', 
+  download_url = 'https://github.com/megaplanet/AlaOCL/archive/0.1.1.zip', 
   keywords = ['OCL','constraint','UML','validation','query language'],
   classifiers = [],
 )

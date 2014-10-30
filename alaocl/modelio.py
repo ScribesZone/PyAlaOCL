@@ -33,7 +33,8 @@ if WITH_MODELIO:
 
 
     MODELIO_LISTS = [
-        # FIXME: in fact this line  useless as addSuperClass does not works with inheritance
+        # FIXME: useless as addSuperClass does not works with inheritance
+        # Another solution should probably be find
         # noinspection PyUnresolvedReferences
         EList,
 
@@ -43,18 +44,63 @@ if WITH_MODELIO:
 
     print 'alaocl.modelio:'
     print '    Injecting Seq methods in Modelio list classes'
-    alaocl.injector.addSuperclass(alaocl.jython.JavaListExtension,MODELIO_LISTS)
+    alaocl.injector.addSuperclass(
+        alaocl.jython.JavaListExtension, MODELIO_LISTS)
 
-    # http://download.eclipse.org/modeling/emf/emf/javadoc/2.5.0/org/eclipse/emf/common/util/EList.html
-    # AbstractSequentialInternalEList, AbstractTreeIterator, AdapterFactoryEditingDomain.DomainTreeIterator, AdapterFactoryTreeIterator, BasicEList, BasicEList.FastCompare, BasicEList.UnmodifiableEList, BasicEMap, BasicFeatureMap, BasicInternalEList, BasicNotifierImpl.EAdapterList, ConverterUtil.EPackageList, ConverterUtil.GenPackageList, DelegatingEcoreEList, DelegatingEcoreEList.Dynamic, DelegatingEcoreEList.Generic, DelegatingEcoreEList.UnmodifiableEList, DelegatingEcoreEList.Unsettable, DelegatingEList, DelegatingEList.UnmodifiableEList, DelegatingFeatureMap, DelegatingNotifyingInternalEListImpl, DelegatingNotifyingListImpl, EContentsEList, EcoreEList, EcoreEList.Dynamic, EcoreEList.Generic, EcoreEList.UnmodifiableEList, EcoreEList.UnmodifiableEList.FastCompare, EcoreEMap, EcoreEMap.DelegateEObjectContainmentEList, EcoreEMap.Unsettable, EcoreEMap.Unsettable.UnsettableDelegateEObjectContainmentEList, EcoreUtil.ContentTreeIterator, ECrossReferenceEList, EDataTypeEList, EDataTypeEList.Unsettable, EDataTypeUniqueEList, EDataTypeUniqueEList.Unsettable, EObjectContainmentEList, EObjectContainmentEList.Resolving, EObjectContainmentEList.Unsettable, EObjectContainmentEList.Unsettable.Resolving, EObjectContainmentWithInverseEList, EObjectContainmentWithInverseEList.Resolving, EObjectContainmentWithInverseEList.Unsettable, EObjectContainmentWithInverseEList.Unsettable.Resolving, EObjectEList, EObjectEList.Unsettable, EObjectResolvingEList, EObjectResolvingEList.Unsettable, EObjectWithInverseEList, EObjectWithInverseEList.ManyInverse, EObjectWithInverseEList.Unsettable, EObjectWithInverseEList.Unsettable.ManyInverse, EObjectWithInverseResolvingEList, EObjectWithInverseResolvingEList.ManyInverse, EObjectWithInverseResolvingEList.Unsettable, EObjectWithInverseResolvingEList.Unsettable.ManyInverse, EStoreEObjectImpl.BasicEStoreEList, EStoreEObjectImpl.BasicEStoreFeatureMap, EStoreEObjectImpl.EStoreEList, EStoreEObjectImpl.EStoreFeatureMap, ExtensibleURIConverterImpl.ContentHandlerList, ExtensibleURIConverterImpl.URIHandlerList, FeatureMapUtil.FeatureEList, FeatureMapUtil.FeatureEList.Basic, FeatureMapUtil.FeatureFeatureMap, ItemProvider.ItemProviderNotifyingArrayList, ItemProviderAdapter.ModifiableSingletonEList, MappingImpl.MappingTreeIterator, ModelExporter.GenPackagesTreeIterator, NotificationChainImpl, NotifyingInternalEListImpl, NotifyingListImpl, ResourceImpl.ContentsEList, ResourceSetImpl.ResourcesEList, StringSegment, UniqueEList, UniqueEList.FastCompare, URIMappingRegistryImpl, XMLHandler.MyEObjectStack, XMLHandler.MyStack, XMLString
-
+    # http://download.eclipse.org/modeling/emf/emf/javadoc/2.5.0/org/eclipse
+    # /emf/common/util/EList.html AbstractSequentialInternalEList,
+    # AbstractTreeIterator, AdapterFactoryEditingDomain.DomainTreeIterator,
+    # AdapterFactoryTreeIterator, BasicEList, BasicEList.FastCompare,
+    # BasicEList.UnmodifiableEList, BasicEMap, BasicFeatureMap,
+    # BasicInternalEList, BasicNotifierImpl.EAdapterList,
+    # ConverterUtil.EPackageList, ConverterUtil.GenPackageList,
+    # DelegatingEcoreEList, DelegatingEcoreEList.Dynamic,
+    # DelegatingEcoreEList.Generic, DelegatingEcoreEList.UnmodifiableEList,
+    # DelegatingEcoreEList.Unsettable, DelegatingEList,
+    # DelegatingEList.UnmodifiableEList, DelegatingFeatureMap,
+    # DelegatingNotifyingInternalEListImpl, DelegatingNotifyingListImpl,
+    # EContentsEList, EcoreEList, EcoreEList.Dynamic, EcoreEList.Generic,
+    # EcoreEList.UnmodifiableEList,
+    # EcoreEList.UnmodifiableEList.FastCompare, EcoreEMap,
+    # EcoreEMap.DelegateEObjectContainmentEList, EcoreEMap.Unsettable,
+    # EcoreEMap.Unsettable.UnsettableDelegateEObjectContainmentEList,
+    # EcoreUtil.ContentTreeIterator, ECrossReferenceEList, EDataTypeEList,
+    # EDataTypeEList.Unsettable, EDataTypeUniqueEList,
+    # EDataTypeUniqueEList.Unsettable, EObjectContainmentEList,
+    # EObjectContainmentEList.Resolving, EObjectContainmentEList.Unsettable,
+    #  EObjectContainmentEList.Unsettable.Resolving,
+    # EObjectContainmentWithInverseEList,
+    # EObjectContainmentWithInverseEList.Resolving,
+    # EObjectContainmentWithInverseEList.Unsettable,
+    # EObjectContainmentWithInverseEList.Unsettable.Resolving, EObjectEList,
+    #  EObjectEList.Unsettable, EObjectResolvingEList,
+    # EObjectResolvingEList.Unsettable, EObjectWithInverseEList,
+    # EObjectWithInverseEList.ManyInverse,
+    # EObjectWithInverseEList.Unsettable,
+    # EObjectWithInverseEList.Unsettable.ManyInverse,
+    # EObjectWithInverseResolvingEList,
+    # EObjectWithInverseResolvingEList.ManyInverse,
+    # EObjectWithInverseResolvingEList.Unsettable,
+    # EObjectWithInverseResolvingEList.Unsettable.ManyInverse,
+    # EStoreEObjectImpl.BasicEStoreEList,
+    # EStoreEObjectImpl.BasicEStoreFeatureMap,
+    # EStoreEObjectImpl.EStoreEList, EStoreEObjectImpl.EStoreFeatureMap,
+    # ExtensibleURIConverterImpl.ContentHandlerList,
+    # ExtensibleURIConverterImpl.URIHandlerList,
+    # FeatureMapUtil.FeatureEList, FeatureMapUtil.FeatureEList.Basic,
+    # FeatureMapUtil.FeatureFeatureMap,
+    # ItemProvider.ItemProviderNotifyingArrayList,
+    # ItemProviderAdapter.ModifiableSingletonEList,
+    # MappingImpl.MappingTreeIterator,
+    # ModelExporter.GenPackagesTreeIterator, NotificationChainImpl,
+    # NotifyingInternalEListImpl, NotifyingListImpl,
+    # ResourceImpl.ContentsEList, ResourceSetImpl.ResourcesEList,
+    # StringSegment, UniqueEList, UniqueEList.FastCompare,
+    # URIMappingRegistryImpl, XMLHandler.MyEObjectStack, XMLHandler.MyStack,
+    #  XMLString
 
     # noinspection PyUnresolvedReferences
     from org.modelio.api.modelio import Modelio
-
-
-
-
 
 
     def theSession():
@@ -63,10 +109,9 @@ if WITH_MODELIO:
         """
         return Modelio.getInstance().getModelingSession()
 
-
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     #  Access to the metamodel
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
 
 
     # noinspection PyUnresolvedReferences
@@ -92,17 +137,17 @@ if WITH_MODELIO:
         """
         return allMClasses().collect(Metamodel.getJavaInterface).asSet()
 
-
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     #  Access to model elements
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
 
     def _allInstances(cls):
         """
-        Return the set of all instances of a given metaclass or java meta interface.
+        Return the set of all instances of a given metaclass or java meta
+        interface.
 
-        Provides both the direct instances but also instances of all subclasses.
-        :return: The set all all instances, direct or indirect.
+        Provides both the direct instances but also instances of all
+        subclasses. :return: The set all all instances, direct or indirect.
         :rtype: Set[MObject]
         """
         return asSet(theSession().findByClass(cls))
@@ -137,14 +182,12 @@ if WITH_MODELIO:
 
     # for some reason it is not possible to inject elements intro MClasses
 
-    print '    Injecting class methods in all Modelio MInterfaces (%s)'% allMInterfaces().size()
+    print '    Injecting class methods in all Modelio MInterfaces (%s)'\
+          % allMInterfaces().size()
     for mi in allMInterfaces():
         mi.allInstances = classmethod(_allInstances)
         mi.named = classmethod(_named)
         mi.selectByAttribute = classmethod(_selectByAttribute)
-
-
-
 
 
 
@@ -157,11 +200,9 @@ if WITH_MODELIO:
     print "    Adding object methods to Element"
     Element.getMInterface = _getMInterface
 
-
-
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     #   Access to the metamodel
-    #----------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
 
     # noinspection PyUnresolvedReferences
     from org.modelio.vcore.smkernel.meta import SmClass

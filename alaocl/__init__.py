@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Collection of classes and functions to ease the translation of OCL expressions into python.
+Collection of classes and functions to ease the translation of OCL expressions
+into python.
 
 .. moduleauthor:: jeanmariefavre
 
@@ -36,7 +37,8 @@ Boolean
 -------
 * true                  -> True
 * false                 -> False
-* xor                   -> TODO: implement it as xor(a,b)  or  a \|xor| b with Infix
+* xor                   -> TODO: implement it as xor(a,b)  or  a \|xor| b with
+                            Infix
 * implies               -> TODO: like xor
 * if c then a else b    -> a if c else b
 
@@ -57,7 +59,7 @@ Collection
 
 UML based features
 ------------------
-* oclIsNew              -> Not available. Can be use only with postcondition
+* oclIsNew              -> Not available. Can be use only with post condition
 * oclAsType             -> Not necessary thanks for dynamic typing in python.
 
 
@@ -108,7 +110,6 @@ def floor(r):
     """ Return the largest integer which is not greater than the parameter.
     """
     import math
-
     return math.floor(r)
 
 
@@ -143,9 +144,11 @@ class Invalid(Exception):
 
 def oclIsKindOf(value,aType):
     """
-    Evaluates to True if the type of the value is *exactly* the type given as a second parameter
-    is an instance of type or one of its subtypes directly or indirectly. Use the method
-    oclIsTypeOf if you want to check if a value is exactly of a given type.
+    Evaluates to True if the type of the value is *exactly* the type given as
+    a second parameter is an instance of type or one of its subtypes directly
+    or indirectly. Use the method oclIsTypeOf if you want to check if a value
+    is exactly of a given type.
+
 
     :param value: A scalar value, a collection or an object.
     :type value; Any
@@ -177,7 +180,9 @@ def oclIsKindOf(value,aType):
 
 def oclIsTypeOf(value,aType):
     """
-    Return True if the type of the value is *exactly* the type given as a second parameter. This function does not take into account sub-typing relationships. If this is what is intended, use oclIsKindOf instead.
+    Return True if the type of the value is *exactly* the type given as a
+    second parameter. This function does not take into account sub-typing
+    relationships. If this is what is intended, use oclIsKindOf instead.
 
     :param value: A scalar value, a collection or an object.
     :type value; Any
@@ -187,11 +192,11 @@ def oclIsTypeOf(value,aType):
     :return: True if value is compatible with the type aType.
     :rtype: bool
     Examples:
-        >>> print oclIsTypeOf("hello",str)    # in python2 we have str for ascii string
+        >>> print oclIsTypeOf("hello",str)
         True
-        >>> print oclIsTypeOf("hello",basestring)    # basestring is the supertype of string/unicode
+        >>> print oclIsTypeOf("hello",basestring)
         False
-        >>> print oclIsTypeOf(u"çüabè",unicode)   # note u"..." for unicode string
+        >>> print oclIsTypeOf(u"çüabè",unicode)
         True
     """
     return type(value) == aType
@@ -255,7 +260,8 @@ def evaluatePredicate(value,predicate):
     r = evaluate(value,predicate)
     t = type(r)
     if t is not bool:
-        msg = "Predicate expected. Returned a value of type %s instead of a boolean" % t
+        msg = "Predicate expected. Returned a value of type" \
+              " %s instead of a boolean" % t
         raise Invalid(msg)
     else:
         return r
@@ -265,14 +271,14 @@ def flatten(value):
     """
     Return an OCL collection with all the elements at the first level.
 
-    :param collection: The collection to be flatten
-    :rtype collection: iterable[iterable]
+    :param value: The collection to be flatten
+    :rtype value: iterable[iterable]
     :return: A flatten collection.
     :rtype: Seq
     """
     try:
         return value.flatten()
-    except:
+    except NameError:
         # print "-----flatten(%s)"%value
         if isCollection(value):
             #print "  collection"
@@ -284,9 +290,9 @@ def flatten(value):
         else:
             return [value]
 
-#====================================================================================
+#==============================================================================
 #                              Collections
-#====================================================================================
+#==============================================================================
 
 
 
@@ -295,10 +301,13 @@ def flatten(value):
 # noinspection PyClassicStyleClass
 class GenericCollection:
     """
-    Class used both to define brand new OCL collection (classes under Collection) but
-    also to define JavaCollectionExtension. Due to restriction of class instrumentation
-    we use old-style class, hence object is not the base class.
+    Class used both to define brand new OCL collection (classes under
+    Collection) but also to define JavaCollectionExtension. Due to restriction
+    of class instrumentation we use old-style class, hence object is not the
+    base class.
     """
+    def __init__(self):
+        pass
 
     def __len__(self):
         """
@@ -441,7 +450,8 @@ class GenericCollection:
         Examples:
             >>> Set(2,3,2.5,-5).reject(lambda e:e>2) == Set(2,-5)
             True
-            >>> Set(Set(1,2,3,4),Set()).reject(lambda e:e.size()>3) == Set(Set())
+            >>> Set(Set(1,2,3,4),Set()).reject(lambda e:e.size()>3) \
+                     == Set(Set())
             True
         """
         return self.select(lambda e:not evaluatePredicate(e,predicate))
@@ -505,7 +515,8 @@ class GenericCollection:
 
         :param predicate: A predicate, that is a function returning a boolean.
         :type predicate: X->bool
-        :return: Whether or not the predicate is satisfied by at least one element.
+        :return: Whether or not the predicate is satisfied by at least one
+                element.
         :rtype bool:
 
         Examples:
@@ -531,7 +542,8 @@ class GenericCollection:
 
         :param predicate: A predicate, that is a function returning a boolean.
         :type predicate: X->bool
-        :return: Whether or not the predicate is satisfied by exactly one element.
+        :return: Whether or not the predicate is satisfied by exactly one
+                element.
         :rtype bool:
 
         Examples:
@@ -574,7 +586,8 @@ class GenericCollection:
         Examples:
 
             >>> def f(x):
-            ...     successors = {1:[2],2:[1,2,3],3:[4],4:[],5:[5],6:[5],7:[5,7]}
+            ...     successors = {1:[2], 2:[1, 2, 3], 3:[4], 4:[], \
+                                  5:[5], 6:[5], 7:[5, 7]}
             ...     return successors[x]
             >>> Set(1).closure(f) == Seq(1,2,3,4)
             True
@@ -584,8 +597,7 @@ class GenericCollection:
             True
         """
 
-        # FIXME: Here closure returns always a sequence, but the type changes in OCL.
-
+        # FIXME: returns always a sequence, but the type changes in OCL.
         from collections import deque
         sources = list(self)
         to_visit = deque(sources)
@@ -720,9 +732,9 @@ class Collection(object,GenericCollection):
 
 
 
-#-------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #   OCL Sets
-#-------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 
 def asSet(collection):
@@ -742,10 +754,10 @@ class Set(Collection):
     """
     Set of elements.
 
-    This class mimics OCL Sets. Being a set, there are no duplicates and no ordering
-    of elements. By contrast to OCL Sets, here a set can contain any kind of elements
-    at the same time. OCL sets are homogeneous, all elements being of the same type
-    (or at least same supertype).
+    This class mimics OCL Sets. Being a set, there are no duplicates and no
+    ordering of elements. By contrast to OCL Sets, here a set can contain
+    any kind of elements at the same time. OCL sets are homogeneous,
+    all elements being of the same type (or at least same supertype).
     """
 
     def __init__(self,*args):
@@ -768,6 +780,7 @@ class Set(Collection):
            1
         """
         # We cannot have Counter here. So list is ok (see listAll)
+        super(Set,self).__init__()
         self.theSet = set(list(args))
 
     @classmethod
@@ -866,7 +879,8 @@ class Set(Collection):
         """
         assert isCollection(anyCollection), \
             'Any collection expected, but found %s' % anyCollection
-        # We don't need to take special care with Counter as we remove duplicates
+        # We don't need to take special care with Counter as we remove
+        # duplicates
         fresh = set(self.theSet)
         fresh = fresh | set(anyCollection)
         return Set.new(fresh)
@@ -876,7 +890,9 @@ class Set(Collection):
 
     def intersection(self,anyCollection):
         """
-        Retain only elements in the intersection between this set and the given collection.
+        Retain only elements in the intersection between this set and the
+        given collection.
+
         :param anyCollection: A collection of values to be added to this set.
         :type anyCollection: collection
         :return: A set including all values added plus previous set elements.
@@ -894,7 +910,7 @@ class Set(Collection):
 
         assert isCollection(anyCollection), \
             'Any collection expected, but found %s' % anyCollection
-        # We don't need to take special care with Counter as we remove duplicates
+        # Don't need to take special care with Counter as we remove duplicates
         fresh = set(self.theSet)
         fresh = fresh & set(anyCollection)
         return Set.new(fresh)
@@ -905,7 +921,8 @@ class Set(Collection):
     def difference(self,anyCollection):
         """
         Remove from the set all values in the collection.
-        :param anyCollection: Any collection of values to be discarded from this set.
+        :param anyCollection: Any collection of values to be discarded from
+                this set.
         :type anyCollection: collection
         :return: This set without the values in the collection.
         :rtype: Set
@@ -923,7 +940,7 @@ class Set(Collection):
         assert isCollection(anyCollection), \
             'Any collection expected, but found %s' % anyCollection
         fresh = set(self.theSet)
-        # We don't need to take special care with Counter as we remove duplicates
+        # No need for take special care with Counter as we remove duplicates
         fresh = fresh - set(anyCollection)
         return Set.new(fresh)
 
@@ -981,7 +998,8 @@ class Set(Collection):
             # True
             # >>> Set(Set(Set(2)),Set(2)).flatten() == Set(2)
             # True
-            >>> Set(Set(2,3),Set(4),Set(),Bag("a"),Bag(2,2)).flatten() == Set(2,3,4,"a")
+            >>> Set(Set(2,3),Set(4),Set(),Bag("a"),Bag(2,2)).flatten() \
+                   == Set(2,3,4,"a")
             True
 
             #>>> Set().flatten() == Set()
@@ -1012,7 +1030,8 @@ class Set(Collection):
         Examples:
             >>> Set(2,3,2.5,-5).select(lambda e:e>2) == Set(3,2.5)
             True
-            >>> Set(Set(1,2,3,4),Set()).select(lambda e:e.size()>3) == Set(Set(1,2,3,4))
+            >>> Set(Set(1,2,3,4),Set()).select(lambda e:e.size()>3) \
+                    == Set(Set(1,2,3,4))
             True
         """
         return Set.new(set([e for e in self if evaluatePredicate(e,predicate)]))
@@ -1033,14 +1052,16 @@ class Set(Collection):
         Examples:
             >>> Set(2,3,5,-5).collectNested(lambda e:e*e) == Bag(25,25,4,9)
             True
-            >>> Set(2,3).collectNested(lambda e:Bag(e,e)) == Bag(Bag(2,2),Bag(3,3))
+            >>> Set(2,3).collectNested(lambda e:Bag(e,e)) \
+                    == Bag(Bag(2,2),Bag(3,3))
             True
         """
         return Bag.new(map((lambda e:evaluate(e,expression)),self.theSet))
 
     def sortedBy(self,expression):
         # FIXME: should return a OrderedSet
-        return Seq.new(sorted(self.theSet,key=(lambda e:evaluate(e,expression))))
+        return \
+            Seq.new(sorted(self.theSet,key=(lambda e:evaluate(e,expression))))
 
     def asSet(self):
         return self
@@ -1053,9 +1074,11 @@ class Set(Collection):
 
     def __str__(self):
         """
-        Return a string representation of the set where elements are separated by ", ".
+        Return a string representation of the set where elements are
+        separated by ", ".
 
-        The result is non deterministic as there is no ordering between elements.
+        The result is non deterministic as there is no ordering between
+        elements.
 
         :return: A string.
         :rtype: str
@@ -1076,7 +1099,8 @@ class Set(Collection):
 
     def __eq__(self,value):
         """
-        Return true if the value given is a Set and has exactly the same elements.
+        Return true if the value given is a Set and has exactly the same
+        elements.
 
         :param value: Any value, but succeed only for sets.
         :type value: any
@@ -1101,7 +1125,6 @@ class Set(Collection):
         """
         if not isinstance(value,Set):
             return False
-        # print "check %s == %s -> %s" % (self.theSet,value.theSet,self.theSet == value.theSet)
         return self.theSet == value.theSet
 
     def __ne__(self,value):
@@ -1122,10 +1145,9 @@ class Set(Collection):
 
 
 
-#-------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #   OCL Bags
-#-------------------------------------------------------------------------------------
-
+#------------------------------------------------------------------------------
 
 
 def asBag(anyCollection):
@@ -1159,6 +1181,7 @@ class Bag(Collection):
            >>> Bag(Set(2,3),Set(3,2)).size()
            2
         """
+        super(Bag,self).__init__()
         # We cannot have Counter here. So list is ok (see listAll)
         self.theCounter = Counter(list(args))
 
@@ -1167,8 +1190,8 @@ class Bag(Collection):
         newBag = Bag()
         if isinstance(anyCollection,Counter):
             newBag.theCounter = anyCollection.copy()
-            # Remove the 0 and negative elements from the counter.
-            # This weird trick is indicated in python documentation for Counter.
+            # Remove the 0 and negative elements from the counter. This
+            # weird trick is indicated in python documentation for Counter.
             newBag.theCounter += Counter()
         elif isinstance(anyCollection,Bag):
             newBag.theCounter = anyCollection.theBag.copy()
@@ -1259,7 +1282,8 @@ class Bag(Collection):
         Add to the bag all values in the collection given as a parameter.
 
         Examples:
-           >>> Bag(10,"a",3,3,10,10).union(Bag(10,10,"b")) == Bag("b","a",3,3,10,10,10,10,10)
+           >>> Bag(10,"a",3,3,10,10).union(Bag(10,10,"b")) \
+                    == Bag("b","a",3,3,10,10,10,10,10)
            True
            >>> Bag(2,4).union([2,4]) == Bag(2,2,4,4)
            True
@@ -1319,7 +1343,8 @@ class Bag(Collection):
 
     def flatten(self):
         """
-        If the bag is a bag of collection then return the bag union of all its elements.
+        If the bag is a bag of collection then return the bag union of all
+        its elements.
 
         :return: the sum of all elements .
         :rtype: int
@@ -1362,12 +1387,12 @@ class Bag(Collection):
 
     def collectNested(self,expression):
         """
-        Return a bag of values resulting from the evaluation of the given expression
-        on all elements of the bag.
+        Return a bag of values resulting from the evaluation of the given
+        expression on all elements of the bag.
 
-        It is assumed that the expression has no side effect; this expression is not
-        called for each occurrence but only one for a given value. This is an
-        optimisation for bags.
+        It is assumed that the expression has no side effect; this
+        expression is not called for each occurrence but only one for a
+        given value. This is an optimisation for bags.
 
         :param expression: A function returning any kind of value.
         :type expression: X -> Y
@@ -1377,10 +1402,12 @@ class Bag(Collection):
         Examples:
             >>> Bag(2,2,3,5,-5).collectNested(lambda e:e*e) == Bag(4,4,9,25,25)
             True
-            >>> Bag(2,2).collectNested(lambda e:Bag(e,e)) == Bag(Bag(2,2),Bag(2,2))
+            >>> Bag(2,2).collectNested(lambda e:Bag(e,e)) \
+                    == Bag(Bag(2,2),Bag(2,2))
             True
         """
-        results = [(evaluate(e,expression),n) for (e,n) in self.theCounter.items()]
+        results = [(evaluate(e,expression),n)
+                   for (e,n) in self.theCounter.items()]
         fresh = Counter()
         for (r,n) in results:
             fresh[r] += n
@@ -1388,7 +1415,8 @@ class Bag(Collection):
 
     def hasDuplicates(self):
         """
-        Return True if this bag has at least one element with more than one occurrence.
+        Return True if this bag has at least one element with more than one
+        occurrence.
 
         This is not an OCL operation. It is provided here just for convenience.
         :return: True if there are some duplicates in the bag.
@@ -1416,13 +1444,15 @@ class Bag(Collection):
             >>> Bag(2,2,1,3,3).duplicates()  == Bag(2,2,3,3)
             True
             """
-        new_counter = Counter(dict([(e,n) for (e,n) in self.theCounter.items() if n>=2]))
+        new_counter = \
+            Counter(dict([(e,n) for (e,n) in self.theCounter.items() if n>=2]))
         return Bag.new(new_counter)
 
 
     def sortedBy(self,expression):
         r = []
-        for key in sorted(self.theCounter.keys(),key=lambda e:evaluate(e,expression)):
+        s = sorted(self.theCounter.keys(),key=lambda e:evaluate(e,expression))
+        for key in s:
             r += [key] * self.theCounter[key]
         # FIXME: Should be an ordered set
         return r
@@ -1445,7 +1475,9 @@ class Bag(Collection):
 
     def __eq__(self,value):
         """
-        Return True only if the value is a Bag with the same elements and number of occurrences.
+        Return True only if the value is a Bag with the same elements and
+        number of occurrences.
+
         :param value: Any value.
         :type value: any
         :return: True if the value is equals to this bag.
@@ -1490,9 +1522,9 @@ class Bag(Collection):
 
 
 
-#-------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 #   OCL Sequences
-#-------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 
 def asSeq(anyCollection):
     """
@@ -1527,6 +1559,7 @@ class Seq(Collection):
            >>> Seq(Seq(1,2)) == Seq(Seq(1),Seq(2))
            False
         """
+        super(Seq,self).__init__()
         # no worry with args being a Counter
         self.theList = list(args)
 
@@ -1605,7 +1638,8 @@ class Seq(Collection):
         return Seq.new(map((lambda e:evaluate(e,expression)),self.theList))
 
     def sortedBy(self,expression):
-        return Seq.new(sorted(self.theList,key=(lambda e:evaluate(e,expression))))
+        return \
+            Seq.new(sorted(self.theList,key=(lambda e:evaluate(e,expression))))
 
     def union(self,anyCollection):
         assert isCollection(anyCollection), \
@@ -1629,15 +1663,16 @@ class Seq(Collection):
         try:
             return Seq.new(self.theList[lower - 1:upper])
         except:
-            raise Invalid(".subSequence(%s,%s) failed: No such element."%(lower,upper))
+            msg = ".subSequence(%s,%s) failed: No such element."
+            raise Invalid(msg % (lower,upper))
 
     def at(self,index):
         """
         Return the nth element of the sequence starting from 1.
 
-        Note: In OCL the 1st element is at the index 1 while in python this is at 0.
-        Both the OCL 'at' and python [] operators can be used, but remember the
-        different way to index elements.
+        Note: In OCL the 1st element is at the index 1 while in python this
+        is at 0. Both the OCL 'at' and python [] operators can be used,
+        but remember the different way to index elements.
 
         Examples:
             >>> Seq(1,2,3,4).at(1)
@@ -1712,7 +1747,9 @@ class Seq(Collection):
 
 
 
-
+#==============================================================================
+#     Conversions
+#==============================================================================
 
 
 
@@ -1733,6 +1770,7 @@ class ConversionRule(object):
         return self.collectionType.new()
 
 from collections import OrderedDict
+
 
 class Converter(object):
     def __init__(self):
@@ -1783,8 +1821,8 @@ class Converter(object):
             for rule in self.rules.values():
                 if rule.accept(value):
                     return self._registerActualTypeRule(self,valueType,rule)
-            msg = "getConversionRule(): Can't convert a value of type" % valueType
-            raise ValueError(msg)
+            msg = "getConversionRule(): Can't convert a value of type %s"
+            raise ValueError(msg % valueType)
 
     def asCollection(self,value):
         try:
@@ -1802,9 +1840,9 @@ class Converter(object):
         """
         Return all the elements of the collection as a list.
 
-        This takes into account the Counter specificity: instead of using list and the
-        standard enumeration on this collection this function use the "elements()"
-        method. Otherwise occurrences are eliminated.
+        This takes into account the Counter specificity: instead of using
+        list and the standard enumeration on this collection this function
+        use the "elements()" method. Otherwise occurrences are eliminated.
         """
         if isinstance(value,collections.Counter):
             return list(value.elements())

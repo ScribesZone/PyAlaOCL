@@ -8,28 +8,37 @@ __all__ = (
 
 import types
 
-#=====================================================================================
+#==============================================================================
 #   Functions and decorators to instrument existing classes
-#=====================================================================================
+#==============================================================================
 
-def addSuperclass(superclassOrSuperclasses,subclassOrSubclasses):
+
+def addSuperclass(superclassOrSuperclasses, subclassOrSubclasses):
     """
-    Add a (list of) superclasses to a(list of) subclass(es) and this after the fact.
+    Add a (list of) superclasses to a(list of) subclass(es) and this after
+    the fact.
 
-    See the @superclassof decorator for more information. This version is more
-    general as it can take various superclasses and it can be used both after
-    the definition of subclasses but also superclasses.
+    See the @superclassof decorator for more information. This version is
+    more general as it can take various superclasses and it can be used both
+    after the definition of subclasses but also superclasses.
 
-    :param superclassOrSuperclasses: A class or a list of classes to be added as
-    superclass(es) to the subclasses.
-    :type superclassOrSuperclasses: objectclass|tuple[objeclass]|list[objectclass]
-    :param subclassOrSubclasses: A class or a list of classes to be instrumented.
+    :param superclassOrSuperclasses: A class or a list of classes to be
+    added as superclass(es) to the subclasses.
+
+    :type superclassOrSuperclasses: objectclass|tuple[objeclass]|list[
+    objectclass]
+
+    :param subclassOrSubclasses: A class or a list of classes to be
+    instrumented.
+
     :type subclassOrSubclasses: type|tuple[type]|list[type]
     :return: Nothing
     :rtype: NoneType
     """
+
     # print superclassOrSuperclasses,type(superclassOrSuperclasses)
-    if isinstance(superclassOrSuperclasses,(types.TypeType,types.ClassType)):
+    if isinstance(superclassOrSuperclasses,
+                  (types.TypeType ,types.ClassType)):
         superclasses = (superclassOrSuperclasses,)
     else:
         superclasses = tuple(superclassOrSuperclasses)
@@ -38,7 +47,6 @@ def addSuperclass(superclassOrSuperclasses,subclassOrSubclasses):
     else:
         subclasses = list(subclassOrSubclasses)
     for subclass in subclasses:
-        # print "adding %s to %s with %s" % (superclasses,subclass,subclass.__bases__)
         if object in subclass.__bases__:
             others = list(subclass.__bases__)
             others.remove(object)
@@ -68,10 +76,11 @@ def superclassof(subclassOrSubclasses):
     Example
     -------
 
-    In the example below two classes *Kangaroo* and *ColoredKangaroo* are assumed
-    to be defined in a (weired) library. For some reasons their source codes cannot
-    modified. We want however to add *Animal* as a superclass of *Kangaroo*
-    and *ColoredAnimal* as a superclass of *ColoredKangaroo* .
+    In the example below two classes *Kangaroo* and *ColoredKangaroo* are
+    assumed to be defined in a (weired) library. For some reasons their
+    source codes cannot modified. We want however to add *Animal* as a
+    superclass of *Kangaroo* and *ColoredAnimal* as a superclass of
+    *ColoredKangaroo* .
 
     First let's start with the existing library:
 
@@ -112,7 +121,8 @@ def superclassof(subclassOrSubclasses):
         kangaroo
 
     Using the method *babies* added in the *Animal* superclass shows that
-    polymorphism work properly. Otherwise it would say that babies are "animals".
+    polymorphism work properly. Otherwise it would say that babies are
+    "animals".
 
         >>> print k.babies()
         babies are kangaroos
@@ -125,8 +135,8 @@ def superclassof(subclassOrSubclasses):
         >>> print bk.babies()
         babies are blue kangaroos
 
-    In particular is is important to check what happen when a superclass
-    has been added to a subclass. This is the case for *ColoredAnimal* and the
+    In particular is is important to check what happen when a superclass has
+    been added to a subclass. This is the case for *ColoredAnimal* and the
     method *getColor*.
 
         >>> print bk.color

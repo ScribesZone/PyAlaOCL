@@ -5,16 +5,13 @@ __all__ = (
 )
 
 import alaocl
-from alaocl import Set,Bag,Seq,asSet,asBag,asSeq,isCollection,Invalid
-from alaocl.injector import superclassof,addSuperclass
+from alaocl import Set, Bag, Seq, Invalid
+from alaocl.injector import addSuperclass
 
 
-
-
-
-#=====================================================================================
+#==============================================================================
 #   Functions and decorators to instrument existing classes
-#=====================================================================================
+#==============================================================================
 
 # noinspection PyUnresolvedReferences
 from java.util import Collections
