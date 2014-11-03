@@ -1,15 +1,13 @@
 # coding=utf-8
 
 __all__ =(
-    'allMClasses',
-    'allMInterfaces',
+    'allMetaClasses',
+    'allMetaInterfaces',
+    'getMetaClass',
+    'getMetaInterface',
 )
 
 
-
-#-----------------------------------------------------------------------------
-#  Add OCL Seq operations on JavaList returned by modelio
-#-----------------------------------------------------------------------------
 
 from alaocl import asSet,Invalid
 import alaocl.injector
@@ -23,95 +21,136 @@ except:
     WITH_MODELIO = False
 
 if WITH_MODELIO:
-    # noinspection PyUnresolvedReferences
-    from org.eclipse.emf.common.util import EList
-    # noinspection PyUnresolvedReferences
-    from org.modelio.vcore.smkernel import SmList
-    # noinspection PyUnresolvedReferences
-    from org.modelio.vcore.smkernel import SmConstrainedList
 
 
+    #-----------------------------------------------------------------------------
+    #  Add OCL Seq operations on JavaList returned by modelio
+    #-----------------------------------------------------------------------------
 
-    MODELIO_LISTS = [
-        # FIXME: useless as addSuperClass does not works with inheritance
-        # Another solution should probably be find
+    def _addOCLSequenceOperationsOnModelioList():
         # noinspection PyUnresolvedReferences
-        EList,
+        from org.eclipse.emf.common.util import EList
+        # noinspection PyUnresolvedReferences
+        from org.modelio.vcore.smkernel import SmList
+        # noinspection PyUnresolvedReferences
+        from org.modelio.vcore.smkernel import SmConstrainedList
 
-        SmList,
-        SmConstrainedList,
-    ]
+        MODELIO_LISTS = [
+            # FIXME: useless as addSuperClass does not works with inheritance
+            # Another solution should probably be find
+            # noinspection PyUnresolvedReferences
+            EList,
 
-    print 'alaocl.modelio:'
-    print '    Injecting Seq methods in Modelio list classes'
-    alaocl.injector.addSuperclass(
-        alaocl.jython.JavaListExtension, MODELIO_LISTS)
+            SmList,
+            SmConstrainedList,
+        ]
 
-    # http://download.eclipse.org/modeling/emf/emf/javadoc/2.5.0/org/eclipse
-    # /emf/common/util/EList.html AbstractSequentialInternalEList,
-    # AbstractTreeIterator, AdapterFactoryEditingDomain.DomainTreeIterator,
-    # AdapterFactoryTreeIterator, BasicEList, BasicEList.FastCompare,
-    # BasicEList.UnmodifiableEList, BasicEMap, BasicFeatureMap,
-    # BasicInternalEList, BasicNotifierImpl.EAdapterList,
-    # ConverterUtil.EPackageList, ConverterUtil.GenPackageList,
-    # DelegatingEcoreEList, DelegatingEcoreEList.Dynamic,
-    # DelegatingEcoreEList.Generic, DelegatingEcoreEList.UnmodifiableEList,
-    # DelegatingEcoreEList.Unsettable, DelegatingEList,
-    # DelegatingEList.UnmodifiableEList, DelegatingFeatureMap,
-    # DelegatingNotifyingInternalEListImpl, DelegatingNotifyingListImpl,
-    # EContentsEList, EcoreEList, EcoreEList.Dynamic, EcoreEList.Generic,
-    # EcoreEList.UnmodifiableEList,
-    # EcoreEList.UnmodifiableEList.FastCompare, EcoreEMap,
-    # EcoreEMap.DelegateEObjectContainmentEList, EcoreEMap.Unsettable,
-    # EcoreEMap.Unsettable.UnsettableDelegateEObjectContainmentEList,
-    # EcoreUtil.ContentTreeIterator, ECrossReferenceEList, EDataTypeEList,
-    # EDataTypeEList.Unsettable, EDataTypeUniqueEList,
-    # EDataTypeUniqueEList.Unsettable, EObjectContainmentEList,
-    # EObjectContainmentEList.Resolving, EObjectContainmentEList.Unsettable,
-    #  EObjectContainmentEList.Unsettable.Resolving,
-    # EObjectContainmentWithInverseEList,
-    # EObjectContainmentWithInverseEList.Resolving,
-    # EObjectContainmentWithInverseEList.Unsettable,
-    # EObjectContainmentWithInverseEList.Unsettable.Resolving, EObjectEList,
-    #  EObjectEList.Unsettable, EObjectResolvingEList,
-    # EObjectResolvingEList.Unsettable, EObjectWithInverseEList,
-    # EObjectWithInverseEList.ManyInverse,
-    # EObjectWithInverseEList.Unsettable,
-    # EObjectWithInverseEList.Unsettable.ManyInverse,
-    # EObjectWithInverseResolvingEList,
-    # EObjectWithInverseResolvingEList.ManyInverse,
-    # EObjectWithInverseResolvingEList.Unsettable,
-    # EObjectWithInverseResolvingEList.Unsettable.ManyInverse,
-    # EStoreEObjectImpl.BasicEStoreEList,
-    # EStoreEObjectImpl.BasicEStoreFeatureMap,
-    # EStoreEObjectImpl.EStoreEList, EStoreEObjectImpl.EStoreFeatureMap,
-    # ExtensibleURIConverterImpl.ContentHandlerList,
-    # ExtensibleURIConverterImpl.URIHandlerList,
-    # FeatureMapUtil.FeatureEList, FeatureMapUtil.FeatureEList.Basic,
-    # FeatureMapUtil.FeatureFeatureMap,
-    # ItemProvider.ItemProviderNotifyingArrayList,
-    # ItemProviderAdapter.ModifiableSingletonEList,
-    # MappingImpl.MappingTreeIterator,
-    # ModelExporter.GenPackagesTreeIterator, NotificationChainImpl,
-    # NotifyingInternalEListImpl, NotifyingListImpl,
-    # ResourceImpl.ContentsEList, ResourceSetImpl.ResourcesEList,
-    # StringSegment, UniqueEList, UniqueEList.FastCompare,
-    # URIMappingRegistryImpl, XMLHandler.MyEObjectStack, XMLHandler.MyStack,
-    #  XMLString
+        print 'alaocl.modelio:'
+        print '    Injecting Seq methods in Modelio list classes'
+        alaocl.injector.addSuperclass(
+            alaocl.jython.JavaListExtension, MODELIO_LISTS)
+
+
+
+
+    #--------------------------------------------------------------------------
+    #  Add on each metaclass methods:
+    #  * allInstances()
+    #  * named(str)
+    #  * selectByAttribute(str,value)
+    #  and metaclass attributes
+    #  * metaFullName
+    #  * metaName
+    #  * metaPackage
+    #--------------------------------------------------------------------------
+
+    def _addOperationsToAllModelioMetaClasses():
+
+        def _allInstances(cls):
+            """
+            Return the set of all instances of a given metaclass or java meta
+            interface.
+
+            Provides both the direct instances but also instances of all
+            subclasses. :return: The set all all instances, direct or indirect.
+            :rtype: Set[MObject]
+            """
+            return asSet(_theSession().findByClass(cls))
+
+
+        def _named(cls,name):
+            """
+            Return the only instance that have the given name.
+            If there is more than one instance then raise an exception Invalid
+            (MClass|Class)*String -> MObject|NameError
+            """
+            r = _theSession().findByAtt(cls,'Name',name)
+            if len(r) == 1:
+                return r[0]
+            elif len(r) == 0:
+                raise Invalid('No %s named "%s"' % (cls,name))
+            else:
+                raise Invalid('More than one (%s) elements named %s' \
+                                % (str(len(r)),name))
+
+
+        def _selectByAttribute(cls,attribute,value):
+            """
+            Return the list of all the instances that have the
+            property set to the given value.
+            NOTE: Not sure how to deal with property that are not string.
+            (MClass|Class)*String*String -> List(MObject)
+            EXAMPLES
+              selectedInstances(DataType,"Name","string")
+            """
+            return asSet(_theSession().findByAtt(cls,attribute,value))
+
+        # for some reason it is not possible to inject elements intro MClasses
+
+        print '    Injecting class methods/attributes in '\
+                + 'Modelio MInterfaces (%s)' % allMetaInterfaces().size()
+        for mi in allMetaInterfaces():
+            mi.metaFullName = mi.getCanonicalName()
+            mi.metaName = mi.metaFullName.split('.')[-1]
+            mi.metaPackage = '.'.join(mi.metaFullName.split('.')[:-1])
+            mi.metaClass = getMetaClass(mi)
+            mi.allInstances = classmethod(_allInstances)
+            mi.named = classmethod(_named)
+            mi.selectByAttribute = classmethod(_selectByAttribute)
+
+
+
+    #--------------------------------------------------------------------------
+    #  Define operations on Modelio Element metaclass
+    #--------------------------------------------------------------------------
+
+    def _addOperationsToModelioElementMetaClass():
+
+        # noinspection PyUnresolvedReferences
+        from org.modelio.metamodel.uml.infrastructure import Element
+
+        def _getMInterface(self):
+            return self.getMClass().getJavaInterface()
+
+        print "    Adding object methods to Element"
+        Element.getMInterface = _getMInterface
+
+
+
+
+
+    #--------------------------------------------------------------------------
+    #  Define global level functions get access to modelio metamodel
+    #--------------------------------------------------------------------------
 
     # noinspection PyUnresolvedReferences
     from org.modelio.api.modelio import Modelio
 
-
-    def theSession():
+    def _theSession():
         """ Return the current session.
             () -> IModelingSession
         """
         return Modelio.getInstance().getModelingSession()
-
-    #--------------------------------------------------------------------------
-    #  Access to the metamodel
-    #--------------------------------------------------------------------------
 
 
     # noinspection PyUnresolvedReferences
@@ -120,95 +159,25 @@ if WITH_MODELIO:
     from org.modelio.metamodel import Metamodel
 
 
-    def allMClasses():
+    def allMetaClasses():
         """ Return the list of all known metaclasses as MClass objects.
             () -> [ MClass ]
             EXAMPLE:
-              for m in allMClasses(): print m
+              for m in allMetaClasses(): print m
         """
         return asSet(SmClass.getRegisteredClasses())
 
 
-    def allMInterfaces():
+    def allMetaInterfaces():
         """ Return the list of all known metaclasses as Java interfaces.
             () -> [ Class ]
             EXAMPLE:
-              for m in allMClasses(): print m
+              for m in allMetaClasses(): print m
         """
-        return allMClasses().collect(Metamodel.getJavaInterface).asSet()
-
-    #--------------------------------------------------------------------------
-    #  Access to model elements
-    #--------------------------------------------------------------------------
-
-    def _allInstances(cls):
-        """
-        Return the set of all instances of a given metaclass or java meta
-        interface.
-
-        Provides both the direct instances but also instances of all
-        subclasses. :return: The set all all instances, direct or indirect.
-        :rtype: Set[MObject]
-        """
-        return asSet(theSession().findByClass(cls))
+        return allMetaClasses().collect(Metamodel.getJavaInterface).asSet()
 
 
-    def _named(cls,name):
-        """
-        Return the only instance that have the given name.
-        If there is more than one instance then raise an exception Invalid
-        (MClass|Class)*String -> MObject|NameError
-        """
-        r = theSession().findByAtt(cls,'Name',name)
-        if len(r) == 1:
-            return r[0]
-        elif len(r) == 0:
-            raise Invalid('No %s named "%s"' % (cls,name))
-        else:
-            raise Invalid('More than one (%s) elements named %s' \
-                            % (str(len(r)),name))
-
-
-    def _selectByAttribute(cls,attribute,name):
-        """
-        Return the list of all the instances that have the
-        property set to the given value.
-        NOTE: Not sure how to deal with property that are not string.
-        (MClass|Class)*String*String -> List(MObject)
-        EXAMPLES
-          selectedInstances(DataType,"Name","string")
-        """
-        return asSet(theSession().findByAtt(cls,attribute,name))
-
-    # for some reason it is not possible to inject elements intro MClasses
-
-    print '    Injecting class methods in all Modelio MInterfaces (%s)'\
-          % allMInterfaces().size()
-    for mi in allMInterfaces():
-        mi.allInstances = classmethod(_allInstances)
-        mi.named = classmethod(_named)
-        mi.selectByAttribute = classmethod(_selectByAttribute)
-
-
-
-    # noinspection PyUnresolvedReferences
-    from org.modelio.metamodel.uml.infrastructure import Element
-
-    def _getMInterface(self):
-        return self.getMClass().getJavaInterface()
-
-    print "    Adding object methods to Element"
-    Element.getMInterface = _getMInterface
-
-    #--------------------------------------------------------------------------
-    #   Access to the metamodel
-    #--------------------------------------------------------------------------
-
-    # noinspection PyUnresolvedReferences
-    from org.modelio.vcore.smkernel.meta import SmClass
-
-
-    def getMClass(nameOrMInterfaceOrElement):
+    def getMetaClass(nameOrMInterfaceOrElement):
         """ Return the MClass corresponding to a name, a java interface
             or an element.
             (Class | String | Element) -> MClass
@@ -223,7 +192,7 @@ if WITH_MODELIO:
             return Metamodel.getMClass(nameOrMInterfaceOrElement)
 
 
-    def getMInterface(nameOrMClassOrElement):
+    def getMetaInterface(nameOrMClassOrElement):
         """ Return the Java Interface corresponding to a name or a MClass
             (MClass | String) -> CLass
             EXAMPLES
@@ -234,7 +203,7 @@ if WITH_MODELIO:
         if isinstance(nameOrMClassOrElement,Element):
             return nameOrMClassOrElement.getMClass().getJavaInterface()
         elif isinstance(nameOrMClassOrElement,basestring):
-            return getMClass(nameOrMClassOrElement).getJavaInterface()
+            return getMetaClass(nameOrMClassOrElement).getJavaInterface()
         else:
             return nameOrMClassOrElement.getJavaInterface()
 
@@ -242,7 +211,7 @@ if WITH_MODELIO:
     def theMetamodelExtensions():
         """ TODO, Warning this is not a list!
         """
-        return theSession().getMetamodelExtensions()
+        return _theSession().getMetamodelExtensions()
 
     # noinspection PyUnresolvedReferences
 
@@ -253,6 +222,7 @@ if WITH_MODELIO:
     from org.modelio.metamodel.uml.infrastructure import Element
     # noinspection PyUnresolvedReferences
     from org.modelio.vcore.smkernel.mapi import MClass
+
 
     def isKindOf(element,mClassOrMInterface):
         """ Check if the element is a direct  or indirect instance of a MClass
@@ -282,3 +252,10 @@ if WITH_MODELIO:
 
 
 
+    #--------------------------------------------------------------------------
+    #  Define global level functions get access to modelio metamodel
+    #--------------------------------------------------------------------------
+
+    _addOCLSequenceOperationsOnModelioList()
+    _addOperationsToAllModelioMetaClasses()
+    _addOperationsToModelioElementMetaClass()
