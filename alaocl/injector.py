@@ -42,6 +42,7 @@ def addSuperclass(superclassOrSuperclasses, subclassOrSubclasses):
         superclasses = (superclassOrSuperclasses,)
     else:
         superclasses = tuple(superclassOrSuperclasses)
+
     if isinstance(subclassOrSubclasses,(types.TypeType,types.ClassType)):
         subclasses = [subclassOrSubclasses]
     else:
@@ -50,10 +51,13 @@ def addSuperclass(superclassOrSuperclasses, subclassOrSubclasses):
         if object in subclass.__bases__:
             others = list(subclass.__bases__)
             others.remove(object)
-            subclass.__bases__ = tuple(others) + superclasses + (object,)
+            bases = tuple(others) + superclasses + (object,)
         else:
-            subclass.__bases__ = subclass.__bases__ + superclasses
-            # print "    = %s " % str(subclass.__bases__)
+            bases = list(subclass.__bases__)
+            for superclass in superclasses:
+                if superclass not in bases:
+                    bases.append(superclass)
+        subclass.__bases__ = tuple(bases)
 
 
 def superclassof(subclassOrSubclasses):
