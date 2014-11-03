@@ -1,6 +1,7 @@
 # coding=utf-8
 
-
+# This module does not export any symbol. Importing it inject methods into
+# Java Collections but no new symbol is defined at the global level.
 __all__ = (
 )
 
@@ -223,22 +224,6 @@ JAVA_JDK_COLLECTIONS = JAVA_JDK_SETS + JAVA_JDK_LISTS
 addSuperclass(JavaSetExtension,JAVA_JDK_SETS)
 addSuperclass(JavaListExtension,JAVA_JDK_LISTS)
 
-
-
-
-
-
-# add
-# addAll
-# remove
-# removalAll
-# retainAll
-# clear
-#
-# iterator
-# toArray
-# equals
-# hashCode
 
 
 
