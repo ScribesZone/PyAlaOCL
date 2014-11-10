@@ -35,12 +35,11 @@ String
 
 Boolean
 -------
-* true                  -> True
-* false                 -> False
-* xor                   -> TODO: implement it as xor(a,b)  or  a \|xor| b with
-                            Infix
-* implies               -> TODO: like xor
-* if c then a else b    -> a if c else b
+* true                       -> True
+* false                      -> False
+* xor                        -> ^  but it must be applied between boolean
+* implies                    -> |implies|
+* if c then a else b endif   -> ( a if c else b )
 
 Enumeration
 -----------
@@ -55,7 +54,7 @@ Collection
 * Bag{ ... }            -> Bag( ... )
 * OrderedSet{ ... }     -> OrderedSet( ... )
 * Sequence{ ... }       -> Seq( ... )
-* Sequence {1..5, 10..20} -> Seq{range(1,5)+range(10,20)}
+* Sequence {1..5, 10..20} -> Seq.new(range(1,5)+range(10,20))
 
 UML based features
 ------------------
@@ -101,9 +100,21 @@ __all__ = (
 )
 
 
+class Infix:
+    def __init__(self, function):
+        self.function = function
 
+    def __ror__(self, other):
+        return Infix(lambda x, self=self, other=other: self.function(other, x))
 
-from abc import ABCMeta,abstractmethod
+    def __or__(self, other):
+        return self.function(other)
+
+    def __call__(self, value1, value2):
+        return self.function(value1, value2)
+
+implies = Infix(lambda x,y: (x and y) or not x)
+
 
 
 def floor(r):
@@ -295,6 +306,7 @@ def flatten(value):
 #==============================================================================
 
 
+from abc import ABCMeta, abstractmethod
 
 
 

@@ -1,3 +1,5 @@
+# coding=utf-8
+
 from alaocl import *
 
 #__all__ = (
@@ -31,7 +33,7 @@ except:
 
 if WITH_MODELIO:
 
-    # TODO: in fact, this piece of code should be in modelio
+    # TODO: in fact, this piece of code should be in 'modelio' module
     # and it should be possible to import global stuff at once
     # - at the top level script
     # - as jinja global
