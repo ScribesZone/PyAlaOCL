@@ -80,6 +80,9 @@ __all__ = (
 
     'isUndefined',
     'oclIsUndefined',
+    'isEmpty',
+    'notEmpty',
+    'implies',
     'Invalid',
     'oclIsKindOf',
     'oclIsTypeOf',
@@ -100,21 +103,55 @@ __all__ = (
 )
 
 
-class Infix:
+class InfixedOperator:
     def __init__(self, function):
         self.function = function
 
-    def __ror__(self, other):
-        return Infix(lambda x, self=self, other=other: self.function(other, x))
 
-    def __or__(self, other):
+    def __rrshift__(self, other):
+        return \
+            InfixedOperator(
+                lambda x, self=self, other=other: self.function(other, x))
+
+
+    def __rshift__(self, other):
         return self.function(other)
+
 
     def __call__(self, value1, value2):
         return self.function(value1, value2)
 
-implies = Infix(lambda x,y: (x and y) or not x)
 
+class PostfixedOperator:
+    def __init__(self, function):
+        self.function = function
+
+    def __rrshift__(self, other):
+        return self.function(other)
+
+
+def _isEmpty(value):
+    if value is None:
+        return True
+    else:
+        try:
+            empty =value.isEmpty()
+        except AttributeError:
+            try:
+                l = len(value)
+            except (TypeError,AttributeError):
+                return False
+            else:
+                return l == 0
+        else:
+            return empty
+
+
+implies = InfixedOperator(lambda x,y: y if x else True)
+
+isEmpty = PostfixedOperator(_isEmpty)
+
+notEmpty = PostfixedOperator(lambda x: not _isEmpty(x))
 
 
 def floor(r):
@@ -336,6 +373,8 @@ class GenericCollection:
             3
             >>> len(Set(Set()))
             1
+            >>> len(Set())
+            0
         """
         return self.size()
 
@@ -818,7 +857,16 @@ class Set(Collection):
         return len(self.theSet)
 
     def isEmpty(self):
-        return True if self.theSet else False
+        """
+        Examples:
+            >>> Set().isEmpty()
+            True
+            >>> Set(Set()).isEmpty()
+            False
+            >>> Set(2,3).isEmpty()
+            False
+        """
+        return False if self.theSet else True
 
     def count(self,value):
         """

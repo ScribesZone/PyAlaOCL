@@ -62,6 +62,7 @@ if WITH_MODELIO:
     #  * metaFullName
     #  * metaName
     #  * metaPackage
+    #  * metaClass
     #--------------------------------------------------------------------------
 
     def _addOperationsToAllModelioMetaClasses():
@@ -121,7 +122,8 @@ if WITH_MODELIO:
 
 
     #--------------------------------------------------------------------------
-    #  Define operations on Modelio Element metaclass
+    #  Define operations on Modelio 'Element' metaclass
+    #  * .getMInterface()
     #--------------------------------------------------------------------------
 
     def _addOperationsToModelioElementMetaClass():
@@ -129,11 +131,11 @@ if WITH_MODELIO:
         # noinspection PyUnresolvedReferences
         from org.modelio.metamodel.uml.infrastructure import Element
 
-        def _getMInterface(self):
+        def _getMetaInterface(self):
             return self.getMClass().getJavaInterface()
 
         print "    Adding object methods to Element"
-        Element.getMInterface = _getMInterface
+        Element.getMetaInterface = _getMetaInterface
 
 
 
