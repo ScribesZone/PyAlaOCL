@@ -5,9 +5,9 @@
 __all__ = (
 )
 
-import alaocl
-from alaocl import Set, Bag, Seq, Invalid
-from alaocl.injector import addSuperclass
+import pyalaocl
+from pyalaocl import Set, Bag, Seq, Invalid
+from pyalaocl.injector import addSuperclass
 
 
 #==============================================================================
@@ -21,7 +21,7 @@ import java.util
 
 
 # noinspection PyClassicStyleClass
-class JavaCollectionExtension(alaocl.GenericCollection):
+class JavaCollectionExtension(pyalaocl.GenericCollection):
     # Defined in java
     # size()  java native
     # __len__ jython
@@ -205,7 +205,7 @@ JavaJDKConversionRules = (
     (java.util.List,Seq),
     (java.lang.Iterable,Seq)
 )
-alaocl.CONVERTER.registerConversionRules('java',JavaJDKConversionRules)
+pyalaocl.CONVERTER.registerConversionRules('java',JavaJDKConversionRules)
 
 JAVA_JDK_LISTS = [
     java.util.ArrayList,

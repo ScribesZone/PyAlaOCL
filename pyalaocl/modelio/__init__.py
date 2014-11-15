@@ -17,9 +17,9 @@ __all__ = [
 
 import re
 import keyword
-from alaocl import asSet, Invalid
-import alaocl.injector
-import alaocl.jython
+from pyalaocl import asSet, Invalid
+import pyalaocl.injector
+import pyalaocl.jython
 
 try:
     # noinspection PyUnresolvedReferences
@@ -68,10 +68,10 @@ if WITH_MODELIO:
             SmConstrainedList,
         ]
 
-        print 'alaocl.modelio:'
+        print 'pyalaocl.modelio:'
         print '    Injecting Seq methods in Modelio list classes'
-        alaocl.injector.addSuperclass(
-            alaocl.jython.JavaListExtension, MODELIO_LISTS)
+        pyalaocl.injector.addSuperclass(
+            pyalaocl.jython.JavaListExtension, MODELIO_LISTS)
 
 
     #--------------------------------------------------------------------------

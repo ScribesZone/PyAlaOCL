@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from alaocl import *
+from pyalaocl import *
 
 #__all__ = (
 #    'addOCLtoEnvironment',
@@ -44,7 +44,7 @@ if WITH_MODELIO:
     def _newIsInstanceFun(metaInterface):
         return lambda e: isinstance(e, metaInterface)
 
-    from alaocl.modelio import MetaInterface
+    from pyalaocl.modelio import MetaInterface
     for m_interface in MetaInterface.allInstances():
         metaName = m_interface.metaName
         _GLOBALS[metaName] = m_interface

@@ -4,8 +4,8 @@ import os
 import sys
 import re
 import tempfile
-from alaocl.useocl.errors import Error, LocalizedError
-from alaocl.useocl.model import Model, Enumeration, Class, Attribute,\
+from pyalaocl.useocl.errors import Error, LocalizedError
+from pyalaocl.useocl.model import Model, Enumeration, Class, Attribute,\
     Operation, Invariant, Association, Role, AssociationClass, \
     PreCondition, PostCondition, BasicType
 
