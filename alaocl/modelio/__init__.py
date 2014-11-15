@@ -1,26 +1,49 @@
 # coding=utf-8
 
-__all__ =(
+__all__ = [
+    'MetaInterface',
+    'isMetaInterface',
+    #  ...
+    # THIS LIST IS EXTENDED DYNAMICALLY
+    #  ...
     'allMetaClasses',
-    'allMetaInterfaces',
     'getMetaClass',
     'getMetaInterface',
-)
+    #
+    # is<Class>()
+    # is<Stereotype>()
+    # <Stereotype>
+]
 
-
-
-from alaocl import asSet,Invalid
+import re
+import keyword
+from alaocl import asSet, Invalid
 import alaocl.injector
 import alaocl.jython
 
 try:
     # noinspection PyUnresolvedReferences
     from org.modelio.api.modelio import Modelio
+
     WITH_MODELIO = True
 except:
     WITH_MODELIO = False
 
 if WITH_MODELIO:
+
+
+    # noinspection PyUnresolvedReferences
+    from org.modelio.vcore.smkernel.meta import SmClass
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel import Metamodel as ModelioMetamodel
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel.uml.infrastructure import Stereotype
+    # noinspection PyUnresolvedReferences
+    from java.lang import Class as JavaClass
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel.uml.infrastructure import Element
+    # noinspection PyUnresolvedReferences
+    from org.modelio.vcore.smkernel.mapi import MClass
 
 
     #--------------------------------------------------------------------------
@@ -51,8 +74,6 @@ if WITH_MODELIO:
             alaocl.jython.JavaListExtension, MODELIO_LISTS)
 
 
-
-
     #--------------------------------------------------------------------------
     #  Add on each metaclass methods:
     #  * allInstances()
@@ -65,7 +86,7 @@ if WITH_MODELIO:
     #  * metaClass
     #--------------------------------------------------------------------------
 
-    def _addOperationsToAllModelioMetaClasses():
+    def _addOperationsToAllModelioMetaInterfaces():
 
         def _allInstances(cls):
             """
@@ -79,23 +100,22 @@ if WITH_MODELIO:
             return asSet(_theSession().findByClass(cls))
 
 
-        def _named(cls,name):
+        def _named(cls, name):
             """
             Return the only instance that have the given name.
             If there is more than one instance then raise an exception Invalid
             (MClass|Class)*String -> MObject|NameError
             """
-            r = _theSession().findByAtt(cls,'Name',name)
+            r = _theSession().findByAtt(cls, 'Name', name)
             if len(r) == 1:
                 return r[0]
             elif len(r) == 0:
-                raise Invalid('No %s named "%s"' % (cls,name))
+                raise Invalid('No %s named "%s"' % (cls, name))
             else:
-                raise Invalid('More than one (%s) elements named %s' \
-                                % (str(len(r)),name))
+                raise Invalid('More than one element named %s (%s elements)' \
+                              % (name, str(len(r))))
 
-
-        def _selectByAttribute(cls,attribute,value):
+        def _selectByAttribute(cls, attribute, value):
             """
             Return the list of all the instances that have the
             property set to the given value.
@@ -104,13 +124,14 @@ if WITH_MODELIO:
             EXAMPLES
               selectedInstances(DataType,"Name","string")
             """
-            return asSet(_theSession().findByAtt(cls,attribute,value))
+            return asSet(_theSession().findByAtt(cls, attribute, value))
 
         # for some reason it is not possible to inject elements intro MClasses
 
-        print '    Injecting class methods/attributes in '\
-                + 'Modelio MInterfaces (%s)' % allMetaInterfaces().size()
-        for mi in allMetaInterfaces():
+        print '    Injecting class methods/attributes in ' \
+              + 'Modelio MInterfaces (%s)' \
+                % MetaInterface.allInstances().size()
+        for mi in MetaInterface.allInstances():
             mi.metaFullName = mi.getCanonicalName()
             mi.metaName = mi.metaFullName.split('.')[-1]
             mi.metaPackage = '.'.join(mi.metaFullName.split('.')[:-1])
@@ -118,7 +139,6 @@ if WITH_MODELIO:
             mi.allInstances = classmethod(_allInstances)
             mi.named = classmethod(_named)
             mi.selectByAttribute = classmethod(_selectByAttribute)
-
 
 
     #--------------------------------------------------------------------------
@@ -138,9 +158,6 @@ if WITH_MODELIO:
         Element.getMetaInterface = _getMetaInterface
 
 
-
-
-
     #--------------------------------------------------------------------------
     #  Define global level functions get access to modelio metamodel
     #--------------------------------------------------------------------------
@@ -148,17 +165,32 @@ if WITH_MODELIO:
     # noinspection PyUnresolvedReferences
     from org.modelio.api.modelio import Modelio
 
+
+    class MetaInterface(object):
+
+        @classmethod
+        def allInstances(cls):
+            """ Return the list of all known metaclasses as Java interfaces.
+                () -> [ Class ]
+                EXAMPLE:
+                  for m in allMetaClasses(): print m
+            """
+            return allMetaClasses() \
+                .collect(ModelioMetamodel.getJavaInterface).asSet()
+
+        @classmethod
+        def named(cls, name):
+            return getMetaClass(name).getJavaInterface()
+
+    def isMetaInterface(value):
+        return issubclass(value, Element)
+
+
     def _theSession():
         """ Return the current session.
             () -> IModelingSession
         """
         return Modelio.getInstance().getModelingSession()
-
-
-    # noinspection PyUnresolvedReferences
-    from org.modelio.vcore.smkernel.meta import SmClass
-    # noinspection PyUnresolvedReferences
-    from org.modelio.metamodel import Metamodel
 
 
     def allMetaClasses():
@@ -170,13 +202,13 @@ if WITH_MODELIO:
         return asSet(SmClass.getRegisteredClasses())
 
 
-    def allMetaInterfaces():
-        """ Return the list of all known metaclasses as Java interfaces.
-            () -> [ Class ]
-            EXAMPLE:
-              for m in allMetaClasses(): print m
-        """
-        return allMetaClasses().collect(Metamodel.getJavaInterface).asSet()
+    # def allMetaInterfaces():
+    #     """ Return the list of all known metaclasses as Java interfaces.
+    #         () -> [ Class ]
+    #         EXAMPLE:
+    #           for m in allMetaClasses(): print m
+    #     """
+    #    return allMetaClasses().collect(Metamodel.getJavaInterface).asSet()
 
 
     def getMetaClass(nameOrMInterfaceOrElement):
@@ -188,10 +220,10 @@ if WITH_MODELIO:
               print getMClass("UseCase")
               print getMClass(myUseCase1)
         """
-        if isinstance(nameOrMInterfaceOrElement,Element):
+        if isinstance(nameOrMInterfaceOrElement, Element):
             return nameOrMInterfaceOrElement.getMClass()
         else:
-            return Metamodel.getMClass(nameOrMInterfaceOrElement)
+            return ModelioMetamodel.getMClass(nameOrMInterfaceOrElement)
 
 
     def getMetaInterface(nameOrMClassOrElement):
@@ -202,9 +234,9 @@ if WITH_MODELIO:
               print getMInterface(getMClass("UseCase"))
               print getMInterface(instanceNamed(DataType,"string"))
         """
-        if isinstance(nameOrMClassOrElement,Element):
+        if isinstance(nameOrMClassOrElement, Element):
             return nameOrMClassOrElement.getMClass().getJavaInterface()
-        elif isinstance(nameOrMClassOrElement,basestring):
+        elif isinstance(nameOrMClassOrElement, basestring):
             return getMetaClass(nameOrMClassOrElement).getJavaInterface()
         else:
             return nameOrMClassOrElement.getJavaInterface()
@@ -215,18 +247,8 @@ if WITH_MODELIO:
         """
         return _theSession().getMetamodelExtensions()
 
-    # noinspection PyUnresolvedReferences
 
-    from java.lang import Class as JavaClass
-    # noinspection PyUnresolvedReferences
-    from org.modelio.metamodel import Metamodel
-    # noinspection PyUnresolvedReferences
-    from org.modelio.metamodel.uml.infrastructure import Element
-    # noinspection PyUnresolvedReferences
-    from org.modelio.vcore.smkernel.mapi import MClass
-
-
-    def isKindOf(element,mClassOrMInterface):
+    def isKindOf(element, mClassOrMInterface):
         """ Check if the element is a direct  or indirect instance of a MClass
             or interface. Use isTypeOf to test if the type is exactly
             the one specified.
@@ -234,12 +256,12 @@ if WITH_MODELIO:
               print isKindOf(instanceNamed(DataType,"string"),Element)
               print isKindOf(instanceNamed(DataType,"string"),UseCase)
         """
-        if isinstance(mClassOrMInterface,MClass):
+        if isinstance(mClassOrMInterface, MClass):
             mClassOrMInterface = mClassOrMInterface.getJavaInterface()
-        return isinstance(element,mClassOrMInterface)
+        return isinstance(element, mClassOrMInterface)
 
 
-    def isTypeOf(element,mClassOrMInterface):
+    def isTypeOf(element, mClassOrMInterface):
         """ Check if the element has exactly the type specified, not one of
             its subtype. Use isKindOf to test if the type is exactly the one
             specified.
@@ -247,17 +269,97 @@ if WITH_MODELIO:
               print isTypeOf(instanceNamed(DataType,"string"),DataType)
               print isTypeOf(instanceNamed(DataType,"string"),Element)
         """
-        if isinstance(mClassOrMInterface,JavaClass):
-            mClassOrMInterface = Metamodel.getMClass(mClassOrMInterface)
+        if isinstance(mClassOrMInterface, JavaClass):
+            mClassOrMInterface = ModelioMetamodel.getMClass(mClassOrMInterface)
         return element.getMClass() is mClassOrMInterface
 
 
+    def _newIsInstanceOfMetaClass(metaInterface):
+        return lambda value: isinstance(value, metaInterface)
 
+    def _newHasStereotype(stereotypeName):
+        # FIXME: we must take into account stereotype inheritance
+        def hasStereotype(value):
+            for stereotype in value.getExtension():
+                if stereotype.name == stereotypeName:
+                    return True
+            return False
+
+        return hasStereotype
+
+    def stereotypeBase(stereotype):
+        return MetaInterface.named(stereotype.getBaseClassName())
+
+
+    def _newStereotypeClass(stereotype):
+        base_meta_interface = stereotypeBase(stereotype)
+
+        class StereotypeClass(base_meta_interface):
+            metaName = stereotype.name
+            metaStereotype = stereotype
+            metaProfile = stereotype.owner
+            metaModule = stereotype.module
+            metaPackage = '%s.%s' % (metaModule.name, metaProfile.name)
+            metaFullName = '%s.%s' % (metaPackage, metaName)
+
+            @classmethod
+            def allInstances(cls):
+                return asSet(cls.metaStereotype.getExtendedElement())
+
+            @classmethod
+            def named(cls, name):
+                r = cls.metaStereotype.getExtendedElement().select(
+                    lambda e: e.name == name)
+                if len(r) == 1:
+                    return r[0]
+                elif len(r) == 0:
+
+                    raise Invalid('No %s named "%s"' % (cls.metaName, name))
+                else:
+                    raise Invalid(
+                        'More than one element named %s (%s elements)' \
+                        % (name, str(len(r))))
+
+        return StereotypeClass
+
+    def _isValidIdentifier(s):
+        return re.match("[_A-Za-z][_a-zA-Z0-9]*$", s) \
+               and not keyword.iskeyword(s)
+
+    def _addGlobalItems():
+        global __all__
+
+        # add global functions like isUseCase, isClass, isAttribute
+        for mi in MetaInterface.allInstances():
+            function_name = 'is' + mi.metaName
+            globals()[function_name] = _newIsInstanceOfMetaClass(mi)
+            __all__.append(function_name)
+
+
+
+
+
+
+        # add global functions like isPrecondition, isTable (stereotypes)
+        metaInterfaceNames = MetaInterface.allInstances().metaName
+        for stereotype in Stereotype.allInstances():  # .selectWithCount(1):
+            if not stereotype.name in metaInterfaceNames \
+                    and _isValidIdentifier(stereotype.name):
+                function_name = 'is' + stereotype.name.title()
+                globals()[function_name] = _newHasStereotype(stereotype.name)
+                __all__.append(function_name)
+                class_name = stereotype.name.title()
+                globals()[class_name] = _newStereotypeClass(stereotype)
+                __all__.append(class_name)
+
+    # Signal.__getattr__ = lambda x, attr: 'toto' + attr
 
     #--------------------------------------------------------------------------
     #  Define global level functions get access to modelio metamodel
     #--------------------------------------------------------------------------
 
     _addOCLSequenceOperationsOnModelioList()
-    _addOperationsToAllModelioMetaClasses()
+    _addOperationsToAllModelioMetaInterfaces()
     _addOperationsToModelioElementMetaClass()
+    _addGlobalItems()
+

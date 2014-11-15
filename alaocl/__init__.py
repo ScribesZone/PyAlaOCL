@@ -732,6 +732,10 @@ class Collection(object,GenericCollection):
         pass
 
     @abstractmethod
+    def selectWithCount(self,number):
+        pass
+
+    @abstractmethod
     def sortedBy(self,expression):
         pass
 
@@ -1046,6 +1050,20 @@ class Set(Collection):
         """ Return always an empty bag for a set """
         return Bag.new()
 
+    def selectWithCount(self, number):
+        """ Return the set if 1 is selected as count. Otherwise return
+        an empty set because there is no duplicated elements in a set.
+        :param number:
+        :type number:
+        :return:
+        :rtype:
+        """
+        if number==1:
+            return self
+        else:
+            return Set()
+
+
     def flatten(self):
         """
         If the set is a set of collections, then return the set-union of all
@@ -1054,10 +1072,10 @@ class Set(Collection):
         :return: Set
         :rtype: Set
         Examples:
-            # >>> Set(Set(2)).flatten() == Set(2)
-            # True
-            # >>> Set(Set(Set(2)),Set(2)).flatten() == Set(2)
-            # True
+            >>> Set(Set(2)).flatten() == Set(2)
+            True
+            >>> Set(Set(Set(2)),Set(2)).flatten() == Set(2)
+            True
             >>> Set(Set(2,3),Set(4),Set(),Bag("a"),Bag(2,2)).flatten() \
                    == Set(2,3,4,"a")
             True
@@ -1508,6 +1526,27 @@ class Bag(Collection):
             Counter(dict([(e,n) for (e,n) in self.theCounter.items() if n>=2]))
         return Bag.new(new_counter)
 
+    def selectWithCount(self, number):
+        """ Select in the bag only the elements that have exactly the
+        exact number of element specified.
+        :param number:
+        :type number:
+        :return:
+        :rtype:
+            >>> Bag().selectWithCount(2) == Bag()
+            True
+            >>> Bag(2,3).selectWithCount(2) == Bag()
+            True
+            >>> Bag(2,2,1,3,3).selectWithCount(2)  == Bag(2,2,3,3)
+            True
+            >>> Bag(2,2,9,3,3).selectWithCount(1)  == Bag(9)
+            True
+            """
+        new_counter = \
+            Counter(
+                dict([(e, n) for (e, n) in self.theCounter.items()
+                      if n == number]))
+        return Bag.new(new_counter)
 
     def sortedBy(self,expression):
         r = []
@@ -1636,7 +1675,7 @@ class Seq(Collection):
         return len(self.theList)
 
     def isEmpty(self):
-        return True if self.theList else False
+        return False if self.theList else True
 
     def count(self,element):
         return self.theList.count(element)
@@ -1681,6 +1720,29 @@ class Seq(Collection):
 
     def duplicates(self):
         return Bag.new(self).duplicates()
+
+    def selectWithCount(self,number):
+        """
+        Select only the elements that have exactly the number of occurences
+        specified and return these elements in the original order.
+        :param number:
+        :type number:
+        :return:
+        :rtype:
+            >>> Seq(1,2,2,1,1,5,3,2,5).selectWithCount(1) == Seq(3)
+            True
+            >>> Seq(1,2,2,1,1,5,3,2,5).selectWithCount(3) == Seq(1,2,2,1,1,2)
+            True
+            >>> Seq(1,2,2,1,1,5,3,2,5).selectWithCount(2) == Seq(5,5)
+            True
+            >>> Seq().selectWithCount(3) == Seq()
+            True
+            >>> Seq(2).selectWithCount(0) == Seq()
+            True
+
+        """
+        keep = Bag.new(self).selectWithCount(number)
+        return Seq.new([e for e in self.theList if e in keep ])
 
     def flatten(self):
         r = []

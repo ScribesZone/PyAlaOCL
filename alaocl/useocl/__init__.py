@@ -464,9 +464,6 @@ class UseOCLSpecification(UseOCLSourceSpecification):
 # execute tests if launched from command line
 if __name__ == "__main__":
     test_files = [
-        'testch.use',
-        'testch-err.use',
-        'testch-1.use',
         'AssociationClass.use',
         'Demo.use',
         'Employee.use',

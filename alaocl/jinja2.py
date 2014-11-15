@@ -44,8 +44,8 @@ if WITH_MODELIO:
     def _newIsInstanceFun(metaInterface):
         return lambda e: isinstance(e, metaInterface)
 
-    from alaocl.modelio import allMetaInterfaces
-    for m_interface in allMetaInterfaces():
+    from alaocl.modelio import MetaInterface
+    for m_interface in MetaInterface.allInstances():
         metaName = m_interface.metaName
         _GLOBALS[metaName] = m_interface
 
