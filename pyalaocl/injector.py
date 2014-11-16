@@ -7,6 +7,8 @@ __all__ = (
 
 
 import types
+import keyword
+import re
 
 #==============================================================================
 #   Functions and decorators to instrument existing classes
@@ -164,6 +166,78 @@ def superclassof(subclassOrSubclasses):
 
     return decorate
 
+
+
+def readOnlyPropertyOf(class_,propertyName=None):
+    def decorate(function):
+        name = function.__name__ if propertyName is None else propertyName
+        setattr(class_, name, property(function))
+        return None
+    return decorate
+
+def export(scope, name, value):
+    scope[name] = value
+    if '__all__' in scope:
+        if isinstance(scope['__all__'],tuple):
+            scope['__all__'] = list(scope['__all__'])
+        scope['__all__'].append(name)
+
+def methodOf(class_, methodName=None):
+    def decorate(function):
+        name = function.__name__ if methodName is None else methodName
+        setattr(class_, name, function)
+        return None
+    return decorate
+
+
+def classMethodOf(class_, methodName=None):
+    def decorate(function):
+        name = function.__name__ if methodName is None else methodName
+        setattr(class_, name, classmethod(function))
+        return None
+    return decorate
+
+
+def staticMethodOf(class_, methodName=None):
+    def decorate(function):
+        name = function.__name__ if methodName is None else methodName
+        setattr(class_, name, staticMethodOf(function))
+        return None
+    return decorate
+
+def isValidNewIdentifier(name,
+                         object=None,
+                         globals=None,
+                         existingIdentifiers=None,
+                         allowRedefinition=False):
+    return (
+        re.match("[_A-Za-z][_a-zA-Z0-9]*$", name)
+        and (not keyword.iskeyword(name))
+        and (existingIdentifiers is None or name not in existingIdentifiers)
+        and (
+            allowRedefinition or
+            ( ( existingIdentifiers is None or name not in existingIdentifiers)
+                and (object is None or not hasattr(object,name))
+                and (globals is None or (name not in globals))
+            )
+        )
+    )
+
+def attributeOf(object,name,value,objectName=None):
+    if isValidNewIdentifier(name,object=object,allowRedefinition=True):
+        try:
+            setattr(object, name, value)
+            return True
+        except AttributeError as e:
+            if objectName is None:
+                if hasattr(object,name):
+                    objectName = object.name
+                else:
+                    objectName = 'some(%s)' % type(object)
+            print 'attributeOf: Error instrumenting %s.%s' \
+                % (objectName,name)
+            print 'attributeOf: %s' % e
+            return False
 
 # execute tests if launched from command line
 if __name__ == "__main__":
