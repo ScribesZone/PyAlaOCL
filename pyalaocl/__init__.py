@@ -84,8 +84,11 @@ __all__ = (
     'notEmpty',
     'implies',
     'Invalid',
+
     'oclIsKindOf',
     'oclIsTypeOf',
+    'registerIsKindOfFunction',
+    'registerIsTypeOfFunction',
 
     'Collection',
     'Set',
@@ -190,6 +193,24 @@ class Invalid(Exception):
         super(Invalid,self).__init__(msg)
 
 
+#FIXME; There should be a plugin system here for new ways to check the type
+
+
+
+_OCL_IS_KIND_OF_DELEGATES = []
+_OCL_IS_TYPE_OF_DELEGATES = []
+
+def registerIsKindOfFunction(function):
+    global _OCL_IS_KIND_OF_DELEGATES
+    if function not in _OCL_IS_KIND_OF_DELEGATES:
+        _OCL_IS_KIND_OF_DELEGATES.append(function)
+
+def registerIsTypeOfFunction(function):
+    global _OCL_IS_TYPE_OF_DELEGATES
+    if function not in _OCL_IS_TYPE_OF_DELEGATES:
+        _OCL_IS_TYPE_OF_DELEGATES.append(function)
+
+
 def oclIsKindOf(value,aType):
     """
     Evaluates to True if the type of the value is *exactly* the type given as
@@ -223,8 +244,16 @@ def oclIsKindOf(value,aType):
         True
         >>>
     """
-    return isinstance(value,aType)
+    if isinstance(value,aType):
+        return True
+    else:
+        for is_kind_of_function in _OCL_IS_KIND_OF_DELEGATES:
+            if is_kind_of_function(value, aType):
+                return True
+    return False
 
+
+#FIXME; There should be a plugin system here for new ways to check the type
 
 def oclIsTypeOf(value,aType):
     """
@@ -247,7 +276,13 @@ def oclIsTypeOf(value,aType):
         >>> print oclIsTypeOf(u"çüabè",unicode)
         True
     """
-    return type(value) == aType
+    if type(value) == aType:
+        return True
+    else:
+        for is_type_of_function in _OCL_IS_TYPE_OF_DELEGATES:
+            if is_type_of_function(value,aType):
+                return True
+        return False
 
 
 def evaluate(value,expression):
