@@ -46,6 +46,7 @@ if WITH_MODELIO:
 
     from pyalaocl.modelio import MetaInterface
     for m_interface in MetaInterface.allInstances():
+        raise NotImplemented  # FIXME
         metaName = m_interface.metaName
         _GLOBALS[metaName] = m_interface
 

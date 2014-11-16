@@ -1,37 +1,31 @@
 # coding=utf-8
-
-__all__ = [
-    'MetaInterface',
-    'isMetaInterface',
-    #  ...
-    # THIS LIST IS EXTENDED DYNAMICALLY
-    #  ...
-    'allMetaClasses',
-    'getMetaClass',
-    'getMetaInterface',
-    #
-    # is<Class>()
-    # is<Stereotype>()
-    # <Stereotype>
-]
-
-import re
-import keyword
-from pyalaocl import asSet, Invalid
-import pyalaocl.injector
-import pyalaocl.jython
-
 try:
     # noinspection PyUnresolvedReferences
     from org.modelio.api.modelio import Modelio
-
     WITH_MODELIO = True
 except:
     WITH_MODELIO = False
 
 if WITH_MODELIO:
 
+    __all__ = [
+        'MetaInterface',
+        'isMetaInterface',
+        #  ...
+        # THIS LIST IS EXTENDED DYNAMICALLY
+        #  ...
+        'allMetaClasses',
+        'getMetaClass',
+        'getMetaInterface',
+        #
+        # is<Class>()
+    ]
 
+
+    from pyalaocl import asSet, Invalid, registerIsKindOfFunction, \
+        registerIsTypeOfFunction
+    from pyalaocl.injector import export
+    import pyalaocl.jython
     # noinspection PyUnresolvedReferences
     from org.modelio.vcore.smkernel.meta import SmClass
     # noinspection PyUnresolvedReferences
@@ -248,118 +242,81 @@ if WITH_MODELIO:
         return _theSession().getMetamodelExtensions()
 
 
-    def isKindOf(element, mClassOrMInterface):
-        """ Check if the element is a direct  or indirect instance of a MClass
-            or interface. Use isTypeOf to test if the type is exactly
-            the one specified.
-            EXAMPLES
-              print isKindOf(instanceNamed(DataType,"string"),Element)
-              print isKindOf(instanceNamed(DataType,"string"),UseCase)
-        """
-        if isinstance(mClassOrMInterface, MClass):
-            mClassOrMInterface = mClassOrMInterface.getJavaInterface()
-        return isinstance(element, mClassOrMInterface)
+
+    #--------------------------------------------------------------------------
+    #  Register isKindOf and isTypeOf to main ocl module
+    #--------------------------------------------------------------------------
+
+    def _registerIsKindTypeOfFunctions():
+        def _isKindOf(element, mClassOrMInterface):
+            """ Check if the element is a direct  or indirect instance of a MClass
+                or interface. Use isTypeOf to test if the type is exactly
+                the one specified.
+                EXAMPLES
+                  print isKindOf(instanceNamed(DataType,"string"),Element)
+                  print isKindOf(instanceNamed(DataType,"string"),UseCase)
+            """
+            if isinstance(mClassOrMInterface, MClass):
+                mClassOrMInterface = mClassOrMInterface.getJavaInterface()
+            return isinstance(element, mClassOrMInterface)
 
 
-    def isTypeOf(element, mClassOrMInterface):
-        """ Check if the element has exactly the type specified, not one of
-            its subtype. Use isKindOf to test if the type is exactly the one
-            specified.
-            EXAMPLES
-              print isTypeOf(instanceNamed(DataType,"string"),DataType)
-              print isTypeOf(instanceNamed(DataType,"string"),Element)
-        """
-        if isinstance(mClassOrMInterface, JavaClass):
-            mClassOrMInterface = ModelioMetamodel.getMClass(mClassOrMInterface)
-        return element.getMClass() is mClassOrMInterface
+        def _isTypeOf(element, mClassOrMInterface):
+            """ Check if the element has exactly the type specified, not one of
+                its subtype. Use isKindOf to test if the type is exactly the one
+                specified.
+                EXAMPLES
+                  print isTypeOf(instanceNamed(DataType,"string"),DataType)
+                  print isTypeOf(instanceNamed(DataType,"string"),Element)
+            """
+            if isinstance(mClassOrMInterface, JavaClass):
+                mClassOrMInterface = \
+                    ModelioMetamodel.getMClass(mClassOrMInterface)
+            try:
+                return element.getMClass() is mClassOrMInterface
+            except:
+                return False
 
+        registerIsKindOfFunction(_isKindOf)
+        registerIsTypeOfFunction(_isTypeOf)
 
-    def _newIsInstanceOfMetaClass(metaInterface):
-        return lambda value: isinstance(value, metaInterface)
-
-    def _newHasStereotype(stereotypeName):
-        # FIXME: we must take into account stereotype inheritance
-        def hasStereotype(value):
-            for stereotype in value.getExtension():
-                if stereotype.name == stereotypeName:
-                    return True
-            return False
-
-        return hasStereotype
-
-    def stereotypeBase(stereotype):
-        return MetaInterface.named(stereotype.getBaseClassName())
-
-
-    def _newStereotypeClass(stereotype):
-        base_meta_interface = stereotypeBase(stereotype)
-
-        class StereotypeClass(base_meta_interface):
-            metaName = stereotype.name
-            metaStereotype = stereotype
-            metaProfile = stereotype.owner
-            metaModule = stereotype.module
-            metaPackage = '%s.%s' % (metaModule.name, metaProfile.name)
-            metaFullName = '%s.%s' % (metaPackage, metaName)
-
-            @classmethod
-            def allInstances(cls):
-                return asSet(cls.metaStereotype.getExtendedElement())
-
-            @classmethod
-            def named(cls, name):
-                r = cls.metaStereotype.getExtendedElement().select(
-                    lambda e: e.name == name)
-                if len(r) == 1:
-                    return r[0]
-                elif len(r) == 0:
-
-                    raise Invalid('No %s named "%s"' % (cls.metaName, name))
-                else:
-                    raise Invalid(
-                        'More than one element named %s (%s elements)' \
-                        % (name, str(len(r))))
-
-        return StereotypeClass
-
-    def _isValidIdentifier(s):
-        return re.match("[_A-Za-z][_a-zA-Z0-9]*$", s) \
-               and not keyword.iskeyword(s)
-
-    def _addGlobalItems():
-        global __all__
-
-        # add global functions like isUseCase, isClass, isAttribute
-        for mi in MetaInterface.allInstances():
-            function_name = 'is' + mi.metaName
-            globals()[function_name] = _newIsInstanceOfMetaClass(mi)
-            __all__.append(function_name)
-
-
-
-
-
-
-        # add global functions like isPrecondition, isTable (stereotypes)
-        metaInterfaceNames = MetaInterface.allInstances().metaName
-        for stereotype in Stereotype.allInstances():  # .selectWithCount(1):
-            if not stereotype.name in metaInterfaceNames \
-                    and _isValidIdentifier(stereotype.name):
-                function_name = 'is' + stereotype.name.title()
-                globals()[function_name] = _newHasStereotype(stereotype.name)
-                __all__.append(function_name)
-                class_name = stereotype.name.title()
-                globals()[class_name] = _newStereotypeClass(stereotype)
-                __all__.append(class_name)
-
-    # Signal.__getattr__ = lambda x, attr: 'toto' + attr
 
     #--------------------------------------------------------------------------
     #  Define global level functions get access to modelio metamodel
     #--------------------------------------------------------------------------
 
+
+
+    def _addGlobalFunctionsIsXXXMETACLASS():
+        # add global functions like isKindOfUseCase, isTypeOfClass, etc.
+
+        def _newIsKindOfMETAINERFACE(metaInterface):
+            def isKindOfMETAINTERFACE(value):
+                return isinstance(value, metaInterface)
+            return isKindOfMETAINTERFACE
+
+        def _newIsTypeOfMETAINERFACE(metaInterface):
+            meta_class = ModelioMetamodel.getMClass(metaInterface)
+
+            def isTypeOfMETAINERFACE(value):
+                try:
+                    return value.getMClass() is meta_class
+                except:
+                    return False
+            return isTypeOfMETAINERFACE
+
+
+        for mi in MetaInterface.allInstances():
+            export(globals(),
+                   'isKindOf'+mi.metaName, _newIsKindOfMETAINERFACE(mi))
+            export(globals(),
+                   'isTypeOf'+mi.metaName, _newIsTypeOfMETAINERFACE(mi))
+
+
+    _registerIsKindTypeOfFunctions()
     _addOCLSequenceOperationsOnModelioList()
     _addOperationsToAllModelioMetaInterfaces()
     _addOperationsToModelioElementMetaClass()
-    _addGlobalItems()
+    _addGlobalFunctionsIsXXXMETACLASS()
+
 
