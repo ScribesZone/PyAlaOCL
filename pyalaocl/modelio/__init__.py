@@ -9,22 +9,93 @@ except:
 if WITH_MODELIO:
 
     __all__ = [
-        'MetaInterface',
-        'isMetaInterface',
+
         #  ...
         # THIS LIST IS EXTENDED DYNAMICALLY
         #  ...
-        'allMetaClasses',
-        'getMetaClass',
-        'getMetaInterface',
+
+        #----------------------------------------------------------------------
+        #  Instrumentation of Modelio collections
+        #----------------------------------------------------------------------
+
+        # Class.ownedAttribute.select(...)  # ocl expressions on collection
+
+        #----------------------------------------------------------------------
+        #  MetaClass and instrumentation of MetaClasses (aka SmClass)
+        #----------------------------------------------------------------------
+
+        # Class    # a meta class, not a meta class (CHANGE!!!)
+        #   metaClass
+        #   metaInterface
+        #   metaName
+        #   metaPackage
+        #   metaFullName
+        #   metaFactory
+        #   .new( ... )
+        #   ( ... )         # not on interface :-(
+        #   allInstances()
+        #   named( name )
+        #   selectByAttribute( attribute, value )
+
+        'MetaClass',
+        #   allInstances()
+        #   named( name )
+        #   selectByAttribute(attribute, value)
+        'isMetaClass',
+
+        #----------------------------------------------------------------------
+        #  MetaInterface and instrumentation of MetaInterfaces (JavaInterfaces)
+        #----------------------------------------------------------------------
+
+        'isMetaInterface',
+
+        # IClass  # was Class  (CHANGE!!!)
+        #   metaClass
+        #   metaInterface
+        #   metaName
+        #   metaPackage
+        #   metaFullName
+        #   metaIsAbstract    # isAbstract
+        #   metaSuper         # return an MetaInterface
+        #   metaSub           # return MetaInterfaces
+        #   metaCmsNode
+        #   metaFactory
+        #   new(...)
+        #   allInstances()
+        #   named(name)
+        #   selectByAttribute(attribute, value)
+        #
+        #
+        #
         #
         # is<Class>()
+
+        'MetaInterface',
+        #   allInstances()
+        #   named( name )
+        #   selectByAttribute(attribute, value)
+        'isMetaInterface',
+
+
+        #----------------------------------------------------------------------
+        #  Define global function isKindOfMETACLASS, isTypeOfMETACLASS
+        #----------------------------------------------------------------------
+
+        # IsKindOfClass(value)
+        # IsTypeOfClass(value)
+
+        #----------------------------------------------------------------------
+        #  Register isKindOf and isTypeOf to main ocl module
+        #----------------------------------------------------------------------
+
     ]
 
-
-    from pyalaocl import asSet, Invalid, registerIsKindOfFunction, \
+    import inspect
+    from pyalaocl import \
+        asSet, Invalid, registerIsKindOfFunction, \
         registerIsTypeOfFunction
-    from pyalaocl.injector import export
+    from pyalaocl.injector import \
+        export, methodOf,  readOnlyPropertyOf
     import pyalaocl.jython
     # noinspection PyUnresolvedReferences
     from org.modelio.vcore.smkernel.meta import SmClass
@@ -40,9 +111,33 @@ if WITH_MODELIO:
     from org.modelio.vcore.smkernel.mapi import MClass
 
 
+
+
     #--------------------------------------------------------------------------
-    #  Add OCL Seq operations on JavaList returned by modelio
+    #  Helpers
     #--------------------------------------------------------------------------
+
+
+    def _theSession():
+        return Modelio.getInstance().getModelingSession()
+
+
+    _UML_BPMN_FACTORY = _theSession().getModel()
+    _ANALYST_FACTORY = _theSession().getRequirementModel()
+
+
+    def _getFactory(metaInterface):
+        method_name = 'create' + metaInterface.metaName
+        if hasattr(_UML_BPMN_FACTORY, method_name):
+            return _UML_BPMN_FACTORY
+        if hasattr(_ANALYST_FACTORY, method_name):
+            return _ANALYST_FACTORY
+        return None
+
+    #--------------------------------------------------------------------------
+    #  Instrumentation of Modelio collections
+    #--------------------------------------------------------------------------
+
 
     def _addOCLSequenceOperationsOnModelioList():
         # noinspection PyUnresolvedReferences
@@ -63,24 +158,121 @@ if WITH_MODELIO:
         ]
 
         print 'pyalaocl.modelio:'
-        print '    Injecting Seq methods in Modelio list classes'
+        print '    Injecting Seq methods in Modelio list classes ... ',
         pyalaocl.injector.addSuperclass(
             pyalaocl.jython.JavaListExtension, MODELIO_LISTS)
+        print 'done'
+
+
+    def _selectByAttribute(cls, attribute, value):
+            """
+            Return the list of all the instances that have the
+            property set to the given value.
+            NOTE: Not sure how to deal with property that are not string.
+            (MClass|Class)*String*String -> List(MObject)
+            EXAMPLES
+              selectedInstances(DataType,"Name","string")
+            """
+            return asSet(_theSession().findByAtt(cls, attribute, value))
+
+
 
 
     #--------------------------------------------------------------------------
-    #  Add on each metaclass methods:
-    #  * allInstances()
-    #  * named(str)
-    #  * selectByAttribute(str,value)
-    #  and metaclass attributes
-    #  * metaFullName
-    #  * metaName
-    #  * metaPackage
-    #  * metaClass
+    #  MetaClass and instrumentation of MetaClasses (aka SmClass)
     #--------------------------------------------------------------------------
 
-    def _addOperationsToAllModelioMetaInterfaces():
+    def _addGlobalNameOfMetaMetaClasses():
+        for meta_class in MetaClass.allInstances():
+            name = meta_class.name
+            export(globals(), name, meta_class)
+
+
+    @readOnlyPropertyOf(SmClass)
+    def metaClass(metaClass):
+        return metaClass
+
+    @readOnlyPropertyOf(SmClass)
+    def metaInterface(metaClass):
+        return metaClass.javaInterface
+
+    @readOnlyPropertyOf(SmClass)
+    def metaName(metaClass):
+        return metaClass.javaInterface.metaName
+
+    @readOnlyPropertyOf(SmClass)
+    def metaPackage(metaClass):
+        return metaClass.javaInterface.metaPackage
+
+    @readOnlyPropertyOf(SmClass)
+    def metaFullName(metaClass):
+        return metaClass.javaInterface.metaFullName
+
+
+    @readOnlyPropertyOf(SmClass)
+    def metaFactory(metaClass):
+        return metaClass.javaInterface.metaFactory
+
+    @methodOf(SmClass)
+    def new(metaClass, *args, **kwargs):
+        return metaClass.javaInterface.new(*args, **kwargs)
+
+    @methodOf(SmClass)
+    def __call__(metaClass, *args, **kwargs):
+        return metaClass.javaInterface.new(*args, **kwargs)
+
+    @methodOf(SmClass)
+    def allInstances(metaClass):
+        return metaClass.javaInterface.allInstances()
+
+    @methodOf(SmClass)
+    def named(metaClass, name):
+        return metaClass.javaInterface.named(name)
+
+    @methodOf(SmClass)
+    def selectByAttribute(metaClass, attribute, value):
+        # TODO: check if extensions needed for added attributes ?
+        return metaClass.javaInterface.selectByAttribute(attribute, value)
+
+
+    class MetaClass:
+
+        @classmethod
+        def allInstances(cls):
+            return asSet(SmClass.getRegisteredClasses())
+
+        @classmethod
+        def named(cls, name):
+            return ModelioMetamodel.getMClass(name)
+
+        @classmethod
+        def selectByAttribute(cls, attribute, value):
+            return cls.allInstances().select(
+                lambda mc: getattr(mc,attribute) == value)
+
+    def isMetaClass(value):
+        return isinstance(value, SmClass)
+
+
+
+
+    #--------------------------------------------------------------------------
+    #  MetaInterface and instrumentation of MetaInterfaces (i.e.JavaInterfaces)
+    #--------------------------------------------------------------------------
+
+
+    def _addGlobalNameOfMetaInterfaces():
+        for meta_class in MetaClass.allInstances():
+            name = meta_class.name
+            export(globals(), name, meta_class)
+            export(globals(), 'I' + name, meta_class.javaInterface)
+
+
+    def _addFeaturesToAllMetaInterfaces():
+
+        def _new(cls, *args, **kwargs):
+            method = getattr(cls.metaFactory, 'create' + cls.metaName)
+            return method(*args, **kwargs)
 
         def _allInstances(cls):
             """
@@ -120,24 +312,96 @@ if WITH_MODELIO:
             """
             return asSet(_theSession().findByAtt(cls, attribute, value))
 
-        # for some reason it is not possible to inject elements intro MClasses
+        # for some reason it is not possible to inject elements into MClasses
 
         print '    Injecting class methods/attributes in ' \
-              + 'Modelio MInterfaces (%s)' \
-                % MetaInterface.allInstances().size()
+              + 'Modelio MetaInterfaces (%s) ...' \
+                % MetaInterface.allInstances().size(),
         for mi in MetaInterface.allInstances():
+            mi.metaClass = ModelioMetamodel.getMClass(mi)
+            mi.metaInterface = mi
             mi.metaFullName = mi.getCanonicalName()
-            mi.metaName = mi.metaFullName.split('.')[-1]
             mi.metaPackage = '.'.join(mi.metaFullName.split('.')[:-1])
-            mi.metaClass = getMetaClass(mi)
+            mi.metaName = mi.metaClass.name
+            mi.metaIsAbstract = mi.metaClass.isAbstract()
+
+            meta_super = mi.metaClass.super
+            mi.metaSuper = \
+                None if meta_super is None else meta_super.javaInterface
+            mi.metaSubs = mi.metaClass.getSub(False).javaInterface.asSet()
+            mi.metaAllSub = mi.metaClass.getSub(True).javaInterface.asSet()
+            mi.metaCmsNode = mi.metaClass.isCmsNode()
+            mi.metaFactory = _getFactory(mi)
+            if mi.metaFactory is not None:
+                mi.new = classmethod(_new)
             mi.allInstances = classmethod(_allInstances)
             mi.named = classmethod(_named)
             mi.selectByAttribute = classmethod(_selectByAttribute)
+        print ' done'
+
+
+
+
+    class MetaInterface(object):
+
+        @classmethod
+        def allInstances(cls):
+            return MetaClass.allInstances().javaInterface.asSet()
+
+        @classmethod
+        def named(cls, name):
+            return ModelioMetamodel.getMClass(name).getJavaInterface()
+
+        @classmethod
+        def selectByAttribute(cls, attribute, value):
+            return cls.allInstances().select(
+                lambda mc: getattr(mc, attribute) == value)
+
+    # An adapted version of this function will be registered as isKind/TypeOf
+    def isMetaInterface(value):
+        if inspect.isclass(value):
+            return issubclass(value, Element)
+        else:
+            return False
+
+    #--------------------------------------------------------------------------
+    #  Define global function isKindOfMETACLASS, isTypeOfMETACLASS
+    #--------------------------------------------------------------------------
+
+
+
+    def _addGlobalFunctionsIsXXXMETACLASS():
+        # add global functions like isKindOfUseCase, isTypeOfClass, etc.
+
+        # Not need to define this for metaClass, based on the name!
+        # The argument metaInterface will disappear.
+        def _newIsKindOfMETA(metaInterface):
+            def isKindOfMETA(value):
+                return isinstance(value, metaInterface)
+
+            return isKindOfMETA
+
+        def _newIsTypeOfMETA(metaInterface):
+            meta_class = ModelioMetamodel.getMClass(metaInterface)
+
+            def isTypeOfMETA(value):
+                try:
+                    return value.getMClass() is meta_class
+                except:
+                    return False
+
+            return isTypeOfMETA
+
+
+        for mi in MetaInterface.allInstances():
+            export(globals(),
+                   'isKindOf' + mi.metaName, _newIsKindOfMETA(mi))
+            export(globals(),
+                   'isTypeOf' + mi.metaName, _newIsTypeOfMETA(mi))
 
 
     #--------------------------------------------------------------------------
     #  Define operations on Modelio 'Element' metaclass
-    #  * .getMInterface()
     #--------------------------------------------------------------------------
 
     def _addOperationsToModelioElementMetaClass():
@@ -145,95 +409,23 @@ if WITH_MODELIO:
         # noinspection PyUnresolvedReferences
         from org.modelio.metamodel.uml.infrastructure import Element
 
-        def _getMetaInterface(self):
-            return self.getMClass().getJavaInterface()
+        print "    Adding object methods to Element ...",
+        # Element.MetaInterface = property(_getMetaInterface)
+        # TODO: remove if it remains useless
+        print 'done'
 
-        print "    Adding object methods to Element"
-        Element.getMetaInterface = _getMetaInterface
+
+
+
+
+
+
 
 
     #--------------------------------------------------------------------------
     #  Define global level functions get access to modelio metamodel
     #--------------------------------------------------------------------------
 
-    # noinspection PyUnresolvedReferences
-    from org.modelio.api.modelio import Modelio
-
-
-    class MetaInterface(object):
-
-        @classmethod
-        def allInstances(cls):
-            """ Return the list of all known metaclasses as Java interfaces.
-                () -> [ Class ]
-                EXAMPLE:
-                  for m in allMetaClasses(): print m
-            """
-            return allMetaClasses() \
-                .collect(ModelioMetamodel.getJavaInterface).asSet()
-
-        @classmethod
-        def named(cls, name):
-            return getMetaClass(name).getJavaInterface()
-
-    def isMetaInterface(value):
-        return issubclass(value, Element)
-
-
-    def _theSession():
-        """ Return the current session.
-            () -> IModelingSession
-        """
-        return Modelio.getInstance().getModelingSession()
-
-
-    def allMetaClasses():
-        """ Return the list of all known metaclasses as MClass objects.
-            () -> [ MClass ]
-            EXAMPLE:
-              for m in allMetaClasses(): print m
-        """
-        return asSet(SmClass.getRegisteredClasses())
-
-
-    # def allMetaInterfaces():
-    #     """ Return the list of all known metaclasses as Java interfaces.
-    #         () -> [ Class ]
-    #         EXAMPLE:
-    #           for m in allMetaClasses(): print m
-    #     """
-    #    return allMetaClasses().collect(Metamodel.getJavaInterface).asSet()
-
-
-    def getMetaClass(nameOrMInterfaceOrElement):
-        """ Return the MClass corresponding to a name, a java interface
-            or an element.
-            (Class | String | Element) -> MClass
-            EXAMPLES:
-              print getMClass(UseCase)
-              print getMClass("UseCase")
-              print getMClass(myUseCase1)
-        """
-        if isinstance(nameOrMInterfaceOrElement, Element):
-            return nameOrMInterfaceOrElement.getMClass()
-        else:
-            return ModelioMetamodel.getMClass(nameOrMInterfaceOrElement)
-
-
-    def getMetaInterface(nameOrMClassOrElement):
-        """ Return the Java Interface corresponding to a name or a MClass
-            (MClass | String) -> CLass
-            EXAMPLES
-              print getMInterface("UseCase")
-              print getMInterface(getMClass("UseCase"))
-              print getMInterface(instanceNamed(DataType,"string"))
-        """
-        if isinstance(nameOrMClassOrElement, Element):
-            return nameOrMClassOrElement.getMClass().getJavaInterface()
-        elif isinstance(nameOrMClassOrElement, basestring):
-            return getMetaClass(nameOrMClassOrElement).getJavaInterface()
-        else:
-            return nameOrMClassOrElement.getJavaInterface()
 
 
     def theMetamodelExtensions():
@@ -277,46 +469,39 @@ if WITH_MODELIO:
             except:
                 return False
 
+        def _isTypeOfMetaInterface(value1, value2):
+            if value2 is not MetaInterface:
+                return False
+            return isMetaInterface(value1)
+
+        def _isTypeOfMetaClass(value1, value2):
+            if value2 is not MetaClass:
+                return False
+            return isMetaClass(value1)
+
+        print '    Registering Modelio isKindOf/isTypeOf functions ...',
         registerIsKindOfFunction(_isKindOf)
         registerIsTypeOfFunction(_isTypeOf)
+        # The function works both for Kind and Type since no hierarchy
+        registerIsKindOfFunction(_isTypeOfMetaInterface)
+        registerIsTypeOfFunction(_isTypeOfMetaInterface)
+        # The function works both for Kind and Type since no hierarchy
+        registerIsKindOfFunction(_isTypeOfMetaClass)
+        registerIsTypeOfFunction(_isTypeOfMetaClass)
+        print 'done'
 
 
-    #--------------------------------------------------------------------------
-    #  Define global level functions get access to modelio metamodel
-    #--------------------------------------------------------------------------
 
 
 
-    def _addGlobalFunctionsIsXXXMETACLASS():
-        # add global functions like isKindOfUseCase, isTypeOfClass, etc.
-
-        def _newIsKindOfMETAINERFACE(metaInterface):
-            def isKindOfMETAINTERFACE(value):
-                return isinstance(value, metaInterface)
-            return isKindOfMETAINTERFACE
-
-        def _newIsTypeOfMETAINERFACE(metaInterface):
-            meta_class = ModelioMetamodel.getMClass(metaInterface)
-
-            def isTypeOfMETAINERFACE(value):
-                try:
-                    return value.getMClass() is meta_class
-                except:
-                    return False
-            return isTypeOfMETAINERFACE
 
 
-        for mi in MetaInterface.allInstances():
-            export(globals(),
-                   'isKindOf'+mi.metaName, _newIsKindOfMETAINERFACE(mi))
-            export(globals(),
-                   'isTypeOf'+mi.metaName, _newIsTypeOfMETAINERFACE(mi))
 
-
-    _registerIsKindTypeOfFunctions()
     _addOCLSequenceOperationsOnModelioList()
-    _addOperationsToAllModelioMetaInterfaces()
+    _addFeaturesToAllMetaInterfaces()
     _addOperationsToModelioElementMetaClass()
     _addGlobalFunctionsIsXXXMETACLASS()
-
+    _registerIsKindTypeOfFunctions()
+    _addGlobalNameOfMetaInterfaces()
+    _addGlobalNameOfMetaMetaClasses()
 

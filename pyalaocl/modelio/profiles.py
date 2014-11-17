@@ -23,36 +23,60 @@ if WITH_MODELIO:
     ]
 
 
-    @readOnlyPropertyOf(Stereotype)
-    def base(self):
-        return MetaInterface.named(self.getBaseClassName())
 
+    #--------------------------------------------------------------------------
+    #     Stereotypes
+    #--------------------------------------------------------------------------
 
-    @readOnlyPropertyOf(Stereotype)
-    def metaName(self):
-        return self.name
-
-    @readOnlyPropertyOf(Stereotype)
-    def metaPackage(self):
-        return '%s.%s' % (self.module.name, self.owner.name)
-
-    @readOnlyPropertyOf(Stereotype)
-    def metaFullName(self):
-        return '%s.%s' % (self.metaPackage, self.metaName)
 
     # The trick below is necessary to have at the same time
     # Stereotype.allInstances() and for instance Invariant.allInstances().
     # The first one is a class method on Stereotype, the second
     # is an instance method on a the implementation class.
     # Invariant being (in this example) a instance of the Stereotype class
-    # its not possibe to have on the same class, a instance and class method
+    # its not possible to have on the same class, a instance and class method
     # of the same name
+
     # noinspection PyUnresolvedReferences
     from org.modelio.metamodel.impl.uml.infrastructure import StereotypeImpl
+
+
+
+
+    @readOnlyPropertyOf(StereotypeImpl)
+    def base(self):
+        return MetaInterface.named(self.getBaseClassName())
+
+
+    @readOnlyPropertyOf(StereotypeImpl)
+    def metaName(self):
+        return self.name
+
+    @readOnlyPropertyOf(StereotypeImpl)
+    def metaPackage(self):
+        return '%s.%s' % (self.module.name, self.owner.name)
+
+    @readOnlyPropertyOf(StereotypeImpl)
+    def metaFullName(self):
+        return '%s.%s' % (self.metaPackage, self.metaName)
+
+    @methodOf(StereotypeImpl)
+    def new(self, *args, **kwargs):
+        if self.base.metaFactory is not None:
+            element = self.base.new(*args, **kwargs)
+            self.addedTo(element)
+            return element
+        else:
+            NotImplementedError('Modelio do not provide a createXXX method')
+
+    @methodOf(StereotypeImpl)
+    def __call__(self, *args, **kwargs):
+        return self.new(*args, **kwargs)
 
     @methodOf(StereotypeImpl)
     def allInstances(self):
         return asSet(self.getExtendedElement())
+
 
     @methodOf(StereotypeImpl)
     def named(self, name):
@@ -67,8 +91,13 @@ if WITH_MODELIO:
                 'More than one element named %s (%s elements)' \
                 % (name, str(len(r))))
 
+    @methodOf(StereotypeImpl)
+    def addedTo(self, element):
+        moduleName = self.module.name
+        stereotypeName = self.name
+        if not element.isStereotyped(moduleName, stereotypeName):
+            element.addStereotype(moduleName, stereotypeName)
 
-#    class
 
     def _addMethodsToStereotypeBaseClasses():
 
@@ -107,7 +136,7 @@ if WITH_MODELIO:
             def getter(element):
                 return \
                     element.descriptor.any(lambda x: x.model == noteType)
-            def setter(element,value):
+            def setter(element,value):  #FIXME
                 raise NotImplementedError('_newNOTETYPENoteProperty')
             return property(fget=getter,fset=setter)
 
@@ -117,6 +146,7 @@ if WITH_MODELIO:
             def getter(element):
                 return \
                     element.descriptor.select(lambda x: x.model == noteType)
+            # TODO: Add the possibility to add and remove notes
             return property(fget=getter)
 
         for stereotype in Stereotype.allInstances():
@@ -163,6 +193,32 @@ if WITH_MODELIO:
 
     _addGlobalStereotypeNames()
     _addMethodsToStereotypeBaseClasses()
+
+
+
+
+    #--------------------------------------------------------------------------
+    #     NoteTypes
+    #--------------------------------------------------------------------------
+
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel.impl.uml.infrastructure import NoteTypeImpl
+
+    @methodOf(NoteTypeImpl)
+    def allInstances(noteType):
+        all_bases = noteType.ownerStereotype.base.allInstances()
+        return all_bases.descriptor.select(
+            lambda note: note.model is noteType
+            ).asSet()
+
+    # TODO ADD A GLOBAL NAMES  NOTETYPE, isNOTETYPE, isKindOf/TypeOf, new
+
+    #--------------------------------------------------------------------------
+    #     TagTypes
+    #--------------------------------------------------------------------------
+
+    # TODO
+
 #Signal.isInvariant  = property(lambda e:Invariant in e.getExtension())
 #Signal.isInvariant.setter(lambda e,value:e.addStereotype('PyModelioLibraryModule','Invariant'))
 
