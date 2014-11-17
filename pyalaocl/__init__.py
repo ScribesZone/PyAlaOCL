@@ -105,6 +105,7 @@ __all__ = (
     'listAll',
 )
 
+import inspect
 
 class InfixedOperator:
     def __init__(self, function):
@@ -211,7 +212,7 @@ def registerIsTypeOfFunction(function):
         _OCL_IS_TYPE_OF_DELEGATES.append(function)
 
 
-def oclIsKindOf(value,aType):
+def oclIsKindOf(value1,value2):
     """
     Evaluates to True if the type of the value is *exactly* the type given as
     a second parameter is an instance of type or one of its subtypes directly
@@ -244,18 +245,18 @@ def oclIsKindOf(value,aType):
         True
         >>>
     """
-    if isinstance(value,aType):
+    if inspect.isclass(value2) and isinstance(value1, value2):
         return True
     else:
         for is_kind_of_function in _OCL_IS_KIND_OF_DELEGATES:
-            if is_kind_of_function(value, aType):
+            if is_kind_of_function(value1, value2):
                 return True
     return False
 
 
 #FIXME; There should be a plugin system here for new ways to check the type
 
-def oclIsTypeOf(value,aType):
+def oclIsTypeOf(value1,value2):
     """
     Return True if the type of the value is *exactly* the type given as a
     second parameter. This function does not take into account sub-typing
@@ -276,11 +277,11 @@ def oclIsTypeOf(value,aType):
         >>> print oclIsTypeOf(u"çüabè",unicode)
         True
     """
-    if type(value) == aType:
+    if type(value1) == value2:
         return True
     else:
         for is_type_of_function in _OCL_IS_TYPE_OF_DELEGATES:
-            if is_type_of_function(value,aType):
+            if is_type_of_function(value1, value2):
                 return True
         return False
 
