@@ -2,13 +2,44 @@
 
 __all__ = (
     'addSuperclass',
-    'superclassof',
+    'superclassOf',
+    'attributeOf',
+    'readOnlyPropertyOf',
+    'methodOf',
+    'classMethodOf',
+    'staticMethodOf',
+    'isValidNewIdentifier',
+    'export',
 )
 
 
 import types
 import keyword
+import __builtin__
 import re
+
+def isBuiltin(name):
+    return name in __builtin__.__dict__
+
+def isValidNewIdentifier(name,
+                         allowRedefinition=False,
+                         object=None,
+                         scope=None,
+                         existingIdentifiers=None,
+                         ):
+    return (
+        re.match("[_A-Za-z][_a-zA-Z0-9]*$", name)
+        and (not keyword.iskeyword(name))
+        and (not isBuiltin(name))
+        and (
+            allowRedefinition or
+            ( ( existingIdentifiers is None or name not in existingIdentifiers)
+              and (object is None or not hasattr(object, name))
+              and (scope is None or (name not in scope))
+            )
+        )
+    )
+
 
 #==============================================================================
 #   Functions and decorators to instrument existing classes
@@ -20,7 +51,7 @@ def addSuperclass(superclassOrSuperclasses, subclassOrSubclasses):
     Add a (list of) superclasses to a(list of) subclass(es) and this after
     the fact.
 
-    See the @superclassof decorator for more information. This version is
+    See the @superclassOf decorator for more information. This version is
     more general as it can take various superclasses and it can be used both
     after the definition of subclasses but also superclasses.
 
@@ -62,7 +93,7 @@ def addSuperclass(superclassOrSuperclasses, subclassOrSubclasses):
         subclass.__bases__ = tuple(bases)
 
 
-def superclassof(subclassOrSubclasses):
+def superclassOf(subclassOrSubclasses):
     """
     Class decorator allowing to add *after the fact* a super class to one
     or various classes given as parameter.
@@ -103,7 +134,7 @@ def superclassof(subclassOrSubclasses):
     is added after the fact to the existing class; here to *Kangaroo* because
     this is the root class in the library.
 
-        >>> @superclassof(Kangaroo)
+        >>> @superclassOf(Kangaroo)
         ... #noinspection PyClassicStyleClass
         ... class Animal:                       # not class Animal(object)
         ...     def who(self):
@@ -115,7 +146,7 @@ def superclassof(subclassOrSubclasses):
     one subclass to instrument be we still use [ ] to show that the decorator
     accept a list of classes to be instrumented.
 
-        >>> @superclassof([ColoredKangaroo])
+        >>> @superclassOf([ColoredKangaroo])
         ... class ColoredAnimal(Animal):
         ...     def getColor(self):
         ...         return self.color
@@ -167,6 +198,21 @@ def superclassof(subclassOrSubclasses):
     return decorate
 
 
+def attributeOf(object, name, value, objectName=None):
+    if isValidNewIdentifier(name, object=object, allowRedefinition=True):
+        try:
+            setattr(object, name, value)
+            return True
+        except AttributeError as e:
+            if objectName is None:
+                if hasattr(object, name):
+                    objectName = object.name
+                else:
+                    objectName = 'some(%s)' % type(object)
+            print 'attributeOf: Error instrumenting %s.%s' \
+                  % (objectName, name)
+            print 'attributeOf: %s' % e
+            return False
 
 def readOnlyPropertyOf(class_,propertyName=None):
     def decorate(function):
@@ -175,12 +221,6 @@ def readOnlyPropertyOf(class_,propertyName=None):
         return None
     return decorate
 
-def export(scope, name, value):
-    scope[name] = value
-    if '__all__' in scope:
-        if isinstance(scope['__all__'],tuple):
-            scope['__all__'] = list(scope['__all__'])
-        scope['__all__'].append(name)
 
 def methodOf(class_, methodName=None):
     def decorate(function):
@@ -205,42 +245,36 @@ def staticMethodOf(class_, methodName=None):
         return None
     return decorate
 
-def isValidNewIdentifier(name,
-                         object=None,
-                         globals=None,
-                         existingIdentifiers=None,
-                         allowRedefinition=False):
-    return (
-        re.match("[_A-Za-z][_a-zA-Z0-9]*$", name)
-        and (not keyword.iskeyword(name))
-        and (existingIdentifiers is None or name not in existingIdentifiers)
-        and (
-            allowRedefinition or
-            ( ( existingIdentifiers is None or name not in existingIdentifiers)
-                and (object is None or not hasattr(object,name))
-                and (globals is None or (name not in globals))
-            )
-        )
-    )
 
-def attributeOf(object,name,value,objectName=None):
-    if isValidNewIdentifier(name,object=object,allowRedefinition=True):
-        try:
-            setattr(object, name, value)
-            return True
-        except AttributeError as e:
-            if objectName is None:
-                if hasattr(object,name):
-                    objectName = object.name
-                else:
-                    objectName = 'some(%s)' % type(object)
-            print 'attributeOf: Error instrumenting %s.%s' \
-                % (objectName,name)
-            print 'attributeOf: %s' % e
-            return False
+def export(scope, name, value,
+           existingIdentifiers=None, allowRedefinition=False):
+    if isValidNewIdentifier(name,
+                            allowRedefinition=allowRedefinition,
+                            scope=scope,
+                            existingIdentifiers=existingIdentifiers,
+                            ):
+        if name in scope:
+            if scope[name] is not value:
+                print 'pyalaocl.modelio.injector: allowed redefinition of %s.'\
+                    'It was of type %s.' \
+                    % (name,type(scope[name]))
+        scope[name] = value
+        if '__all__' in scope:
+            if isinstance(scope['__all__'], tuple):
+                scope['__all__'] = list(scope['__all__'])
+            scope['__all__'].append(name)
+    else:
+        if name in scope:
+            if scope[name] is not value:
+                pass
+                #print 'Notice: "%s" symbol was in scope. Not redefined. ' \
+                #    'It remains a %s' % (name,type(scope[name]))
+        else:
+            print 'Notice: "%s" symbol will not be available at toplevel'\
+                  % name
+
 
 # execute tests if launched from command line
 if __name__ == "__main__":
     import doctest
-
     doctest.testmod()
