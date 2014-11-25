@@ -251,7 +251,7 @@ def oclIsKindOf(value1,value2):
         for is_kind_of_function in _OCL_IS_KIND_OF_DELEGATES:
             if is_kind_of_function(value1, value2):
                 return True
-    return False
+        return False
 
 
 #FIXME; There should be a plugin system here for new ways to check the type
@@ -333,7 +333,7 @@ def evaluate(value,expression):
                 return eval(expression)
             else:
                 msg = "evaluate(): %s is not an attribute of the type %s" \
-                    % expression,type(value)
+                    % (expression,type(value))
                 raise Invalid(msg)
         if callable(r):
             return r()
@@ -871,7 +871,7 @@ class Set(Collection):
            1
         """
         # We cannot have Counter here. So list is ok (see listAll)
-        super(Set,self).__init__()
+        super(Set, self).__init__()
         self.theSet = set(list(args))
 
     @classmethod
@@ -1603,7 +1603,12 @@ class Bag(Collection):
         return Seq.new(list(self.theCounter.elements()))
 
     def __str__(self):
-        return "Bag(%s)" % str(self.theCounter)
+        def show_element((value,count)):
+            return str(value)+('' if count==1 else '*'+str(count))
+        body = ", ".join(map(
+            show_element,
+            self.theCounter.items()))
+        return 'Bag(%s)' % str(body)
 
     def __repr__(self):
         return self.__str__()
@@ -1880,7 +1885,8 @@ class Seq(Collection):
 
 
     def __str__(self):
-        return 'Seq(%s)' % self.theList
+        body = ", ".join(map(str,self.theList))
+        return 'Seq(%s)' % body
 
     def __repr__(self):
         return self.__str__()
@@ -2087,7 +2093,6 @@ def isCollection(value,language=None):
 #         return anyCollection
 #     elif isJavaCollection(anyCollection):
 #         pass
-
 
 
 

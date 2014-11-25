@@ -4,7 +4,11 @@ import os
 import sys
 import re
 import tempfile
-from pyalaocl.useocl.errors import Error, LocalizedError
+
+import pyalaocl.useocl.errors
+from pyalaocl.useocl.errors import UseOclError, LocalizedError
+
+import pyalaocl.useocl.model
 from pyalaocl.useocl.model import Model, Enumeration, Class, Attribute,\
     Operation, Invariant, Association, Role, AssociationClass, \
     PreCondition, PostCondition, BasicType
@@ -53,12 +57,16 @@ class UseOCLSpecification(UseOCLSourceSpecification):
         if self.commandExitCode != 0:
             self.isValid = False
             self.errors = []
-            for line in open(errors_filename, 'r').read().splitlines():
+            f = open(errors_filename, 'r')
+            for line in f.read().splitlines():
                 self.errors.append(self._parseErrorLine(line))
+            f.close()
         else:
             self.isValid = True
             self.errors = []
-            output = open(output_filename, 'r').read()
+            f = open(output_filename, 'r')
+            output = f.read()
+            f.close()
             # Remove 2 lines at the beginning (use intro + command)
             # and two lines at the end (information + quit command)
             self.canonical_lines = output.splitlines()[2:-2]
@@ -73,6 +81,7 @@ class UseOCLSpecification(UseOCLSourceSpecification):
             r'(?P<message>.+)$'
         m = re.match(p, line)
         if m:
+            # print 'ERROR', line
             return LocalizedError(
                 self,
                 m.group('message'),
@@ -81,7 +90,7 @@ class UseOCLSpecification(UseOCLSourceSpecification):
                 int(m.group('column')),
             )
         else:
-            return Error(self, line)
+            return UseOclError(self, line)
 
     def _parseCanonicalLines(self):
         # self.__matches = None

@@ -7,6 +7,8 @@ __all__ = (
 
 import pyalaocl
 from pyalaocl import Set, Bag, Seq, Invalid
+
+import pyalaocl.injector
 from pyalaocl.injector import addSuperclass
 
 

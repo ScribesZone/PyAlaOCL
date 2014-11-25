@@ -10,35 +10,19 @@ __all__ = (
     'staticMethodOf',
     'isValidNewIdentifier',
     'export',
+    'symbolGroups',
 )
 
 
 import types
-import keyword
-import __builtin__
-import re
 
-def isBuiltin(name):
-    return name in __builtin__.__dict__
 
-def isValidNewIdentifier(name,
-                         allowRedefinition=False,
-                         object=None,
-                         scope=None,
-                         existingIdentifiers=None,
-                         ):
-    return (
-        re.match("[_A-Za-z][_a-zA-Z0-9]*$", name)
-        and (not keyword.iskeyword(name))
-        and (not isBuiltin(name))
-        and (
-            allowRedefinition or
-            ( ( existingIdentifiers is None or name not in existingIdentifiers)
-              and (object is None or not hasattr(object, name))
-              and (scope is None or (name not in scope))
-            )
-        )
-    )
+import pyalaocl.symbols
+from pyalaocl.symbols import \
+    SymbolManager, ObjectSymbolChange, ScopeSymbolChange, isValidNewIdentifier
+
+
+
 
 
 #==============================================================================
@@ -198,10 +182,14 @@ def superclassOf(subclassOrSubclasses):
     return decorate
 
 
-def attributeOf(object, name, value, objectName=None):
+
+
+
+
+def attributeOf(object, group, name, value, objectName=None):
     if isValidNewIdentifier(name, object=object, allowRedefinition=True):
         try:
-            setattr(object, name, value)
+            ObjectSymbolChange(group, object, name, value)
             return True
         except AttributeError as e:
             if objectName is None:
@@ -214,64 +202,107 @@ def attributeOf(object, name, value, objectName=None):
             print 'attributeOf: %s' % e
             return False
 
-def readOnlyPropertyOf(class_,propertyName=None):
+def readOnlyPropertyOf(class_, group, propertyName=None):
     def decorate(function):
         name = function.__name__ if propertyName is None else propertyName
-        setattr(class_, name, property(function))
+        ObjectSymbolChange(group, class_, name, property(function))
         return None
     return decorate
 
 
-def methodOf(class_, methodName=None):
+def methodOf(class_, group, methodName=None):
     def decorate(function):
         name = function.__name__ if methodName is None else methodName
-        setattr(class_, name, function)
+        ObjectSymbolChange(group, class_, name, function)
         return None
     return decorate
 
 
-def classMethodOf(class_, methodName=None):
+def classMethodOf(class_, group, methodName=None):
     def decorate(function):
         name = function.__name__ if methodName is None else methodName
-        setattr(class_, name, classmethod(function))
+        ObjectSymbolChange(group, class_, name, classmethod(function))
         return None
     return decorate
 
 
-def staticMethodOf(class_, methodName=None):
+def staticMethodOf(class_, group, methodName=None):
     def decorate(function):
         name = function.__name__ if methodName is None else methodName
-        setattr(class_, name, staticMethodOf(function))
+        ObjectSymbolChange(group, class_, name, staticmethod(function))
         return None
     return decorate
 
 
-def export(scope, name, value,
+def export(scope, group, name, value,
            existingIdentifiers=None, allowRedefinition=False):
     if isValidNewIdentifier(name,
                             allowRedefinition=allowRedefinition,
                             scope=scope,
                             existingIdentifiers=existingIdentifiers,
                             ):
+        print '+', #group, name,
         if name in scope:
             if scope[name] is not value:
-                print 'pyalaocl.modelio.injector: allowed redefinition of %s.'\
-                    'It was of type %s.' \
-                    % (name,type(scope[name]))
-        scope[name] = value
+                pass # print '.', #print 'pyalaocl.modelio.injector: allowed redefinition of %s.'\
+                     # 'It was of type %s.' \
+                     # % (name,type(scope[name]))
+        ScopeSymbolChange(group, scope, name, value)
         if '__all__' in scope:
             if isinstance(scope['__all__'], tuple):
                 scope['__all__'] = list(scope['__all__'])
             scope['__all__'].append(name)
+            # print '        added to scope:', name
+            return True
+        else:
+            return False
     else:
         if name in scope:
             if scope[name] is not value:
-                pass
-                #print 'Notice: "%s" symbol was in scope. Not redefined. ' \
-                #    'It remains a %s' % (name,type(scope[name]))
+                print 'Notice: "%s" symbol was in scope. Not redefined. ' \
+                      'It remains a %s' % (name,type(scope[name]))
         else:
             print 'Notice: "%s" symbol will not be available at toplevel'\
                   % name
+
+        return False
+
+
+
+# class SymbolGroups(object):
+#
+#     def __init__(self, groups):
+#         self.symbolsByGroups = dict()
+#         self.scopeModifications = []
+#         for group in groups:
+#             self.symbolsByGroups[group] = dict()
+#
+#     def _add(self, group, symbol, value):
+#         self.symbolsByGroups[group][symbol] = value
+#
+#     def groups(self):
+#         return self.symbolsByGroups.keys()
+#
+#     def addGroupToScope(self, scope, group):
+#         for symbol in self.symbolsByGroups[group]:
+#             value = self.symbolsByGroups[group][symbol]
+#             ScopeSymbolChange(group,scope,symbol,value)
+#
+#     def addToScope(self, scope, group=None):
+#         if group is not None:
+#             self.addGroupToScope(scope, group)
+#         else:
+#             for group in self.symbolsByGroups:
+#                 self.addGroupToScope(scope, group)
+#
+#     def undo(self, group=None):
+#         if group is not None:
+#             SymbolManager.undoGroup(group)
+#         else:
+#             for group in self.symbolsByGroups:
+#                 SymbolManager.undoGroup(group)
+
+
 
 
 # execute tests if launched from command line

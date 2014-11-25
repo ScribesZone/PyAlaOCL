@@ -1,31 +1,105 @@
 # coding=utf-8
 
+#FIXME: Potential BUG with inheritance:
+# print AttributeDefinition.allInstances().name.asSet()
+# print OperationDefinition.allInstances().name.asSet()
+# >>> print Constraint.allInstances().name.asSet()
+# Set()
 
-from pyalaocl.modelio import WITH_MODELIO, MetaInterface, Invalid, asSet
+import pyalaocl.modelio
+from pyalaocl.modelio import WITH_MODELIO, MetaInterface, Invalid
 
 if WITH_MODELIO:
 
-    from pyalaocl.injector import \
-        readOnlyPropertyOf, methodOf, classMethodOf, export, \
-        isValidNewIdentifier, attributeOf
 
-    # noinspection PyUnresolvedReferences
-    from org.modelio.metamodel.uml.infrastructure import Stereotype
 
     __all__ = [
         #  ...
         # THIS LIST IS EXTENDED DYNAMICALLY
         #  ...
         #
-        # is<Class>()
+        'symbolGroups'
+        #----------------------------------------------------------------------
+        #  Stereotypes support
+        #----------------------------------------------------------------------
+        #
+        #   is<Class>()
         # is<Stereotype>()
         # <Stereotype>
+
+        # PostCondition
+        #     base
+        #     metaName
+        #     metaPackage
+        #     metaFullName
+        #     new( ...)
+        #     ( ... )
+        #     allTypeInstances()
+        #     named(name)
+        #     selectByAttribute(attribute, value)
+        #     added(element)
+        #
+        # Operation   # base class stereotyped by PostCondition
+        #     isPostCondition   RW add read/write/read attribute
+        #     isKindOfPostCondition
+        #
+        #----------------------------------------------------------------------
+        # NoteTypeStereotypes support
+        #----------------------------------------------------------------------
+        #     oclPostConditionNote
+        #     oclPostConditionNotes   TODO
+
     ]
+
+    import pyalaocl
+    from pyalaocl import \
+        registerIsTypeOfFunction, registerIsKindOfFunction, Set
+
+    import pyalaocl.injector
+    from pyalaocl.injector import \
+        readOnlyPropertyOf, methodOf, export, attributeOf
+
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel.uml.infrastructure import Stereotype
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel.uml.infrastructure import MetaclassReference
 
 
 
     #--------------------------------------------------------------------------
-    #     Stereotypes
+    #  Global symbols management
+    #--------------------------------------------------------------------------
+
+    symbolGroups = ('stereotypes')
+
+
+
+    #--------------------------------------------------------------------------
+    #     MetaclassReferences support
+    #--------------------------------------------------------------------------
+
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel.impl.uml.infrastructure import \
+        MetaclassReferenceImpl
+
+    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    def base(self):
+        return MetaInterface.named(self.getReferencedClassName())
+
+    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    def metaName(self):
+        return self.base.metaName
+
+    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    def metaPackage(self):
+        return self.base.metaPackage
+
+    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    def metaFullName(self):
+        return self.base.metaFullName
+
+    #--------------------------------------------------------------------------
+    #     Stereotypes support
     #--------------------------------------------------------------------------
 
 
@@ -43,24 +117,27 @@ if WITH_MODELIO:
 
 
 
-    @readOnlyPropertyOf(StereotypeImpl)
+    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
     def base(self):
         return MetaInterface.named(self.getBaseClassName())
 
-
-    @readOnlyPropertyOf(StereotypeImpl)
+    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
     def metaName(self):
         return self.name
 
-    @readOnlyPropertyOf(StereotypeImpl)
+    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
     def metaPackage(self):
         return '%s.%s' % (self.module.name, self.owner.name)
 
-    @readOnlyPropertyOf(StereotypeImpl)
+    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
     def metaFullName(self):
         return '%s.%s' % (self.metaPackage, self.metaName)
 
-    @methodOf(StereotypeImpl)
+    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
+    def allChildren(self):
+        return Set(self).closure('child').excluding(self).asSet()
+
+    @methodOf(StereotypeImpl, 'metaProperty')
     def new(self, *args, **kwargs):
         if self.base.metaFactory is not None:
             element = self.base.new(*args, **kwargs)
@@ -69,18 +146,25 @@ if WITH_MODELIO:
         else:
             NotImplementedError('Modelio do not provide a createXXX method')
 
-    @methodOf(StereotypeImpl)
+    @methodOf(StereotypeImpl, 'metaProperty')
     def __call__(self, *args, **kwargs):
         return self.new(*args, **kwargs)
 
-    @methodOf(StereotypeImpl)
+    @methodOf(StereotypeImpl, 'metaProperty')
+    def allTypeInstances(self):
+        return \
+            self.base.allInstances().select(
+                _isTypeOfSTEREOTYPEMethodName(self)).asSet()
+
+    @methodOf(StereotypeImpl, 'metaProperty')
     def allInstances(self):
-        return asSet(self.getExtendedElement())
+        raise NotImplementedError()
 
+    # FIXME: should take inheritance into account
 
-    @methodOf(StereotypeImpl)
+    @methodOf(StereotypeImpl, 'metaProperty')
     def named(self, name):
-        r = self.getExtendedElement().select(
+        r = self.allInstances().select(
             lambda e: e.name == name)
         if len(r) == 1:
             return r[0]
@@ -91,17 +175,28 @@ if WITH_MODELIO:
                 'More than one element named %s (%s elements)' \
                 % (name, str(len(r))))
 
-    @methodOf(StereotypeImpl)
+    @methodOf(StereotypeImpl, 'metaProperty')
+    def selectByAttribute(self, attribute, value):
+        return self.allInstances.select(
+            lambda element: getattr(element, attribute) == value
+        )
+
+
+    @methodOf(StereotypeImpl, 'profile')
     def addedTo(self, element):
         moduleName = self.module.name
         stereotypeName = self.name
         if not element.isStereotyped(moduleName, stereotypeName):
             element.addStereotype(moduleName, stereotypeName)
 
+    def _isTypeOfSTEREOTYPEMethodName(stereotype):
+        return 'isTypeOf' + stereotype.name #FIXME Title put lowercase
 
-    def _addMethodsToStereotypeBaseClasses():
+    def _isKindOfSTEREOTYPEMethodName(stereotype):
+        return 'isKindOf' + stereotype.name  #FIXME Title lowercase
 
 
+    def _addStereotypeSupportToBaseClasses():
         def _newIsSTEREOTYPEProperty(stereotype):
             # Property that allows:
             #   print aSignal.isInvariant  ->True/False
@@ -132,13 +227,89 @@ if WITH_MODELIO:
                 return element.isStereotyped(moduleName, stereotypeName)
             return property(fget=getter)
 
+        for stereotype in Stereotype.allInstances():
+            base = stereotype.base
+
+            name = _isTypeOfSTEREOTYPEMethodName(stereotype)
+            p = _newIsSTEREOTYPEProperty(stereotype)
+            attributeOf(base, 'profile', name, p)
+
+            name = _isKindOfSTEREOTYPEMethodName(stereotype)
+            p = _newIsKindOfSTEREOTYPEProperty(stereotype)
+            attributeOf(base, 'profile', name, p)
+
+
+
+
+
+    def _addGlobalStereotypeNames():
+        metaInterfaceNames = MetaInterface.allInstances().metaName
+        for stereotype in Stereotype.allInstances():
+            name = stereotype.name      # .title()#FIXME Title lowercase
+            # FIXME: should not be redef true
+            export(globals(), 'sterotype', name, stereotype,
+                   allowRedefinition=True)
+
+    def _registerIsTypeOfAndIsKindOfOCLPredicate():
+        def _isKindOf(value1,value2):
+            if isinstance(value2,Stereotype):
+                return (
+                    _isTypeOf(value1,value2)
+                    or
+                    value2.allChildren.exists(
+                        lambda child: _isTypeOf(value1, child)) )
+            else:
+                return False
+        def _isTypeOf(value1,value2):
+            if isinstance(value2,Stereotype):
+                try:
+                    return value2 in value1.extension
+                except:
+                    return False
+            else:
+                return False
+        registerIsTypeOfFunction(_isTypeOf)
+        registerIsKindOfFunction(_isKindOf)
+
+    def _addGlobalFunctionsIsSTEREOTYPE():
+        pass
+        #TODO: check what to do. The problem is with synonyms
+        # add global functions like isUseCase, isClass, isAttribute
+        #for mi in Stereotype.allInstances().metaName:
+        #    export(globals(), 'is' + mi.metaName,
+              #     _newIsInstanceOfMetaClass(mi))
+
+
+
+
+
+    #--------------------------------------------------------------------------
+    #     NoteTypes support
+    #--------------------------------------------------------------------------
+
+    # noinspection PyUnresolvedReferences
+    from org.modelio.metamodel.impl.uml.infrastructure import NoteTypeImpl
+
+    @methodOf(NoteTypeImpl, 'note')
+    def allInstances(noteType):
+        all_bases = noteType.ownerStereotype.base.allInstances()
+        return all_bases.descriptor.select(
+            lambda note: note.model is noteType
+            ).asSet()
+
+
+    def _addNoteTypeSupportToBaseClasses():
+
         def _newNOTETYPENoteProperty(noteType):
+            # TODO: change to return None or 1
             def getter(element):
                 return \
                     element.descriptor.any(lambda x: x.model == noteType)
-            def setter(element,value):  #FIXME
+
+            def setter(element, value):  #FIXME
                 raise NotImplementedError('_newNOTETYPENoteProperty')
-            return property(fget=getter,fset=setter)
+
+            return property(fget=getter, fset=setter)
 
         def _newNOTETYPENotesProperty(noteType):
             # Property that allow:
@@ -146,78 +317,64 @@ if WITH_MODELIO:
             def getter(element):
                 return \
                     element.descriptor.select(lambda x: x.model == noteType)
+
             # TODO: Add the possibility to add and remove notes
             return property(fget=getter)
 
-        for stereotype in Stereotype.allInstances():
-            base = stereotype.base
+        # TODO: add support for rich notes
+        # TODO: add support for tags
 
-            name = 'is'+stereotype.name.title() #FIXME Title put lowercase
-            p = _newIsSTEREOTYPEProperty(stereotype)
-            attributeOf(base,name,p)
-
-            name = 'isKindOf'+stereotype.name.title()  #FIXME Title put lowercase
-            p = _newIsKindOfSTEREOTYPEProperty(stereotype)
-            attributeOf(base, name, p)
-
-            for noteType in stereotype.definedNoteType:
-                name = noteType.name+'Note'  #FIXME Title put lowercase
+        noteContainers = \
+            Stereotype.allInstances() | MetaclassReference.allInstances()
+        for noteContainer in noteContainers:
+            base = noteContainer.base
+            for noteType in noteContainer.definedNoteType:
+                name = noteType.name + 'Note'  #FIXME Title put lowercase
                 p = _newNOTETYPENoteProperty(noteType)
-                attributeOf(base, name, p)
+                attributeOf(base, 'profile', name, p)
 
                 name = noteType.name + 'Notes'  #FIXME Title put lowercase
                 p = _newNOTETYPENotesProperty(noteType)
-                attributeOf(base, name, p)
+                attributeOf(base, 'profile', name, p)
+
+    # TODO ADD A GLOBAL NAMES ?  NOTETYPE, isNOTETYPE, isKindOf/TypeOf, new
 
 
 
-    def _addGlobalStereotypeNames():
-        metaInterfaceNames = MetaInterface.allInstances().metaName
-        for stereotype in Stereotype.allInstances():
-            name = stereotype.name.title()
-            if isValidNewIdentifier(name,
-                                    existingIdentifiers=metaInterfaceNames):
-                export(globals(),name,stereotype)
-                #function_name = 'is' + stereotype.name.title()
-                #globals()[function_name] = _newHasStereotype(stereotype.name)
-                #__all__.append(function_name)
+    #--------------------------------------------------------------------------
+    #     DocumentTypes
+    #--------------------------------------------------------------------------
 
+    # TODO
 
-    # FIXME:
-    def _addGlobalFunctionsIsSTEREOTYPE():
+    def _addDocumentTypeSupportToBaseClasses():
         pass
-        # add global functions like isUseCase, isClass, isAttribute
-        #for mi in Stereotype.allInstances().metaName:
-        #    export(globals(), 'is' + mi.metaName,
-              #     _newIsInstanceOfMetaClass(mi))
 
-    _addGlobalStereotypeNames()
-    _addMethodsToStereotypeBaseClasses()
-
-
-
-
-    #--------------------------------------------------------------------------
-    #     NoteTypes
-    #--------------------------------------------------------------------------
-
-    # noinspection PyUnresolvedReferences
-    from org.modelio.metamodel.impl.uml.infrastructure import NoteTypeImpl
-
-    @methodOf(NoteTypeImpl)
-    def allInstances(noteType):
-        all_bases = noteType.ownerStereotype.base.allInstances()
-        return all_bases.descriptor.select(
-            lambda note: note.model is noteType
-            ).asSet()
-
-    # TODO ADD A GLOBAL NAMES  NOTETYPE, isNOTETYPE, isKindOf/TypeOf, new
 
     #--------------------------------------------------------------------------
     #     TagTypes
     #--------------------------------------------------------------------------
 
     # TODO
+
+    def _addTagTypeSupportToBaseClasses():
+        pass
+
+    def loadModule():
+        _addGlobalStereotypeNames()
+        _addStereotypeSupportToBaseClasses()
+        _registerIsTypeOfAndIsKindOfOCLPredicate()
+        _addNoteTypeSupportToBaseClasses()
+        _addDocumentTypeSupportToBaseClasses()
+        _addTagTypeSupportToBaseClasses()
+
+
+
+    loadModule()
+
+
+
+
 
 #Signal.isInvariant  = property(lambda e:Invariant in e.getExtension())
 #Signal.isInvariant.setter(lambda e,value:e.addStereotype('PyModelioLibraryModule','Invariant'))
