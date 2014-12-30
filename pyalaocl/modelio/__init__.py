@@ -4,7 +4,6 @@ try:
     from org.modelio.api.modelio import Modelio
     WITH_MODELIO = True
 except:
-    print '====== NOT WITH MODELIO ====='
     WITH_MODELIO = False
 
 if WITH_MODELIO:
@@ -85,14 +84,13 @@ if WITH_MODELIO:
     ]
 
     import inspect
+
+
     import pyalaocl
-    from pyalaocl import \
-        asSet, Invalid, registerIsKindOfFunction, \
-        registerIsTypeOfFunction
-    import pyalaocl.injector
-    from pyalaocl.injector import \
-        export, methodOf,  readOnlyPropertyOf
+    import pyalaocl.utils.injector
     import pyalaocl.jython
+
+
     # noinspection PyUnresolvedReferences
     from org.modelio.vcore.smkernel.meta import SmClass
     # noinspection PyUnresolvedReferences
@@ -152,11 +150,11 @@ if WITH_MODELIO:
             SmConstrainedList,
         ]
 
-        print 'pyalaocl.modelio:'
-        print '    Injecting Seq methods in Modelio list classes ... ',
-        pyalaocl.injector.addSuperclass(
+        # TODO log print 'pyalaocl.modelio:'
+        # print '    Injecting Seq methods in Modelio list classes ... ',
+        pyalaocl.utils.injector.addSuperclass(
             pyalaocl.jython.JavaListExtension, MODELIO_LISTS)
-        print 'done'
+        # print 'done'
 
 
     def _selectByAttribute(cls, attribute, value):
@@ -168,7 +166,8 @@ if WITH_MODELIO:
             EXAMPLES
               selectedInstances(DataType,"Name","string")
             """
-            return asSet(_theSession().findByAtt(cls, attribute, value))
+            return pyalaocl.asSet(
+                _theSession().findByAtt(cls, attribute, value))
 
 
 
@@ -180,52 +179,53 @@ if WITH_MODELIO:
     def _addGlobalNameOfMetaClasses():
         for meta_class in MetaClass.allInstances():
             name = meta_class.name  # allowRedefinition is ok here
-            export(globals(), 'metaclass', name, meta_class,
-                   allowRedefinition=True)
+            pyalaocl.utils.injector.export(
+                globals(), 'metaclass', name, meta_class,
+                allowRedefinition=True)
 
 
-    @readOnlyPropertyOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(SmClass, 'metaProperty')
     def metaClass(metaClass):
         return metaClass
 
-    @readOnlyPropertyOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(SmClass, 'metaProperty')
     def metaInterface(metaClass):
         return metaClass.javaInterface
 
-    @readOnlyPropertyOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(SmClass, 'metaProperty')
     def metaName(metaClass):
         return metaClass.javaInterface.metaName
 
-    @readOnlyPropertyOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(SmClass, 'metaProperty')
     def metaPackage(metaClass):
         return metaClass.javaInterface.metaPackage
 
-    @readOnlyPropertyOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(SmClass, 'metaProperty')
     def metaFullName(metaClass):
         return metaClass.javaInterface.metaFullName
 
 
-    @readOnlyPropertyOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(SmClass, 'metaProperty')
     def metaFactory(metaClass):
         return metaClass.javaInterface.metaFactory
 
-    @methodOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(SmClass, 'metaProperty')
     def new(metaClass, *args, **kwargs):
         return metaClass.javaInterface.new(*args, **kwargs)
 
-    @methodOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(SmClass, 'metaProperty')
     def __call__(metaClass, *args, **kwargs):
         return metaClass.javaInterface.new(*args, **kwargs)
 
-    @methodOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(SmClass, 'metaProperty')
     def allInstances(metaClass):
         return metaClass.javaInterface.allInstances()
 
-    @methodOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(SmClass, 'metaProperty')
     def named(metaClass, name):
         return metaClass.javaInterface.named(name)
 
-    @methodOf(SmClass, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(SmClass, 'metaProperty')
     def selectByAttribute(metaClass, attribute, value):
         # TODO: check if extensions needed for added attributes ?
         return metaClass.javaInterface.selectByAttribute(attribute, value)
@@ -235,7 +235,7 @@ if WITH_MODELIO:
 
         @classmethod
         def allInstances(cls):
-            return asSet(SmClass.getRegisteredClasses())
+            return pyalaocl.asSet(SmClass.getRegisteredClasses())
 
         @classmethod
         def named(cls, name):
@@ -262,8 +262,9 @@ if WITH_MODELIO:
             name = 'I'+meta_class.name
             value = meta_class.javaInterface
             # FIXME: the redefinition stuff is used for realoading, not good
-            export(globals(), 'metaInterface', name, value,
-                   allowRedefinition=True)
+            pyalaocl.utils.injector.export(
+                globals(), 'metaInterface', name, value,
+                allowRedefinition=True)
 
 
 
@@ -282,7 +283,7 @@ if WITH_MODELIO:
             subclasses. :return: The set all all instances, direct or indirect.
             :rtype: Set[MObject]
             """
-            return asSet(_theSession().findByClass(cls))
+            return pyalaocl.asSet(_theSession().findByClass(cls))
 
 
         def _named(cls, name):
@@ -295,10 +296,11 @@ if WITH_MODELIO:
             if len(r) == 1:
                 return r[0]
             elif len(r) == 0:
-                raise Invalid('No %s named "%s"' % (cls, name))
+                raise pyalaocl.Invalid('No %s named "%s"' % (cls, name))
             else:
-                raise Invalid('More than one element named %s (%s elements)' \
-                              % (name, str(len(r))))
+                raise pyalaocl.Invalid(
+                    'More than one element named %s (%s elements)' \
+                    % (name, str(len(r))))
 
         def _selectByAttribute(cls, attribute, value):
             """
@@ -309,13 +311,14 @@ if WITH_MODELIO:
             EXAMPLES
               selectedInstances(DataType,"Name","string")
             """
-            return asSet(_theSession().findByAtt(cls, attribute, value))
+            return pyalaocl.asSet(
+                _theSession().findByAtt(cls, attribute, value))
 
         # for some reason it is not possible to inject elements into MClasses
 
-        print '    Injecting class methods/attributes in ' \
-              + 'Modelio MetaInterfaces (%s) ...' \
-                % MetaInterface.allInstances().size(),
+        # TODO: log print '    Injecting class methods/attributes in ' \
+        #      + 'Modelio MetaInterfaces (%s) ...' \
+        #        % MetaInterface.allInstances().size(),
         for mi in MetaInterface.allInstances():
             # FIXME: these properties should be registered with symbol manager
             mi.metaClass = ModelioMetamodel.getMClass(mi)
@@ -337,7 +340,7 @@ if WITH_MODELIO:
             mi.allInstances = classmethod(_allInstances)
             mi.named = classmethod(_named)
             mi.selectByAttribute = classmethod(_selectByAttribute)
-        print ' done'
+        # print ' done'
 
 
 
@@ -395,15 +398,16 @@ if WITH_MODELIO:
 
             name = 'isKindOf' + mi.metaName
             fun = _newIsKindOfMETA(mi)
-            # FIXME: the redefinition stuff is used for realoading, not good
-            #print '**********',name
-            export(globals(), 'isKindOfFunctions', name, fun,
-                   allowRedefinition=True)
+            # FIXME: the redefinition stuff is used for reloading, not good
+            pyalaocl.utils.injector.export(
+                globals(), 'isKindOfFunctions', name, fun,
+                allowRedefinition=True)
             name = 'isTypeOf' + mi.metaName
             fun = _newIsTypeOfMETA(mi)
-            # FIXME: the redefinition stuff is used for realoading, not good
-            export(globals(), 'isTypeOfFunctions', name, fun,
-                      allowRedefinition=True)
+            # FIXME: the redefinition stuff is used for reloading, not good
+            pyalaocl.utils.injector.export(
+                globals(), 'isTypeOfFunctions', name, fun,
+                allowRedefinition=True)
 
 
 
@@ -416,10 +420,10 @@ if WITH_MODELIO:
         # noinspection PyUnresolvedReferences
         from org.modelio.metamodel.uml.infrastructure import Element
 
-        print "    Adding object methods to Element ...",
+        # TODO log print "    Adding object methods to Element ...",
         # Element.MetaInterface = property(_getMetaInterface)
         # TODO: remove if it remains useless
-        print 'done'
+        # print 'done'
 
 
 
@@ -467,16 +471,16 @@ if WITH_MODELIO:
                 return False
             return isMetaClass(value1)
 
-        print '    Registering Modelio isKindOf/isTypeOf functions ...',
-        registerIsKindOfFunction(_isKindOf)
-        registerIsTypeOfFunction(_isTypeOf)
+        # TODO log print '    Registering Modelio isKindOf/isTypeOf functions ...',
+        pyalaocl.registerIsKindOfFunction(_isKindOf)
+        pyalaocl.registerIsTypeOfFunction(_isTypeOf)
         # The function works both for Kind and Type since no hierarchy
-        registerIsKindOfFunction(_isTypeOfMetaInterface)
-        registerIsTypeOfFunction(_isTypeOfMetaInterface)
+        pyalaocl.registerIsKindOfFunction(_isTypeOfMetaInterface)
+        pyalaocl.registerIsTypeOfFunction(_isTypeOfMetaInterface)
         # The function works both for Kind and Type since no hierarchy
-        registerIsKindOfFunction(_isTypeOfMetaClass)
-        registerIsTypeOfFunction(_isTypeOfMetaClass)
-        print 'done'
+        pyalaocl.registerIsKindOfFunction(_isTypeOfMetaClass)
+        pyalaocl.registerIsTypeOfFunction(_isTypeOfMetaClass)
+        # print 'done'
 
 
 

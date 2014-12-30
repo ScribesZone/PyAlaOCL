@@ -19,6 +19,7 @@ class UseOCLConverter(object):
         'asSet',
         'asBag',
         'asSequence',
+        # TODO: list of operator to be continued
     )
 
     oclExpressionReplacements = (
@@ -55,8 +56,12 @@ class UseOCLConverter(object):
     @classmethod
     def convertCanonicalOCLInvariants(cls, canOCLSpecification):
         i = canOCLSpecification.index('constraints')
+        _ = []
         for line in canOCLSpecification[i:]:
             if line.startswith('  '):
-                print cls.convertCanonicalOCLExpression(line)
-            elif line.startswith('context self : '):
-                print cls.convertCanonicalOCLInvariantHeader(line)
+                _.append(cls.convertCanonicalOCLExpression(line))
+            elif line.startswith('context '):
+                _.append(cls.convertCanonicalOCLInvariantHeader(line))
+            else:
+                _.append(line)
+        return _

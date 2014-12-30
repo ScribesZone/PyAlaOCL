@@ -13,13 +13,9 @@ __all__ = (
     'symbolGroups',
 )
 
-
 import types
 
-
-import pyalaocl.symbols
-from pyalaocl.symbols import \
-    SymbolManager, ObjectSymbolChange, ScopeSymbolChange, isValidNewIdentifier
+import pyalaocl.utils.symbols
 
 
 
@@ -187,9 +183,11 @@ def superclassOf(subclassOrSubclasses):
 
 
 def attributeOf(object, group, name, value, objectName=None):
-    if isValidNewIdentifier(name, object=object, allowRedefinition=True):
+    if pyalaocl.utils.symbols.isValidNewIdentifier(
+            name, object=object, allowRedefinition=True):
         try:
-            ObjectSymbolChange(group, object, name, value)
+            pyalaocl.utils.symbols.ObjectSymbolChange(
+                group, object, name, value)
             return True
         except AttributeError as e:
             if objectName is None:
@@ -205,7 +203,8 @@ def attributeOf(object, group, name, value, objectName=None):
 def readOnlyPropertyOf(class_, group, propertyName=None):
     def decorate(function):
         name = function.__name__ if propertyName is None else propertyName
-        ObjectSymbolChange(group, class_, name, property(function))
+        pyalaocl.utils.symbols.ObjectSymbolChange(
+            group, class_, name, property(function))
         return None
     return decorate
 
@@ -213,7 +212,8 @@ def readOnlyPropertyOf(class_, group, propertyName=None):
 def methodOf(class_, group, methodName=None):
     def decorate(function):
         name = function.__name__ if methodName is None else methodName
-        ObjectSymbolChange(group, class_, name, function)
+        pyalaocl.utils.symbols.ObjectSymbolChange(
+            group, class_, name, function)
         return None
     return decorate
 
@@ -221,7 +221,8 @@ def methodOf(class_, group, methodName=None):
 def classMethodOf(class_, group, methodName=None):
     def decorate(function):
         name = function.__name__ if methodName is None else methodName
-        ObjectSymbolChange(group, class_, name, classmethod(function))
+        pyalaocl.utils.symbols.ObjectSymbolChange(
+            group, class_, name, classmethod(function))
         return None
     return decorate
 
@@ -229,25 +230,28 @@ def classMethodOf(class_, group, methodName=None):
 def staticMethodOf(class_, group, methodName=None):
     def decorate(function):
         name = function.__name__ if methodName is None else methodName
-        ObjectSymbolChange(group, class_, name, staticmethod(function))
+        pyalaocl.utils.symbols.ObjectSymbolChange(
+            group, class_, name, staticmethod(function))
         return None
     return decorate
 
 
 def export(scope, group, name, value,
            existingIdentifiers=None, allowRedefinition=False):
-    if isValidNewIdentifier(name,
-                            allowRedefinition=allowRedefinition,
-                            scope=scope,
-                            existingIdentifiers=existingIdentifiers,
-                            ):
-        print '+', #group, name,
+    if pyalaocl.utils.symbols.isValidNewIdentifier(
+            name,
+            allowRedefinition=allowRedefinition,
+            scope=scope,
+            existingIdentifiers=existingIdentifiers,
+            ):
+        # TODO: check what happen with redefinitions
+        #  print '+', #group, name,
         if name in scope:
             if scope[name] is not value:
                 pass # print '.', #print 'pyalaocl.modelio.injector: allowed redefinition of %s.'\
                      # 'It was of type %s.' \
                      # % (name,type(scope[name]))
-        ScopeSymbolChange(group, scope, name, value)
+        pyalaocl.utils.symbols.ScopeSymbolChange(group, scope, name, value)
         if '__all__' in scope:
             if isinstance(scope['__all__'], tuple):
                 scope['__all__'] = list(scope['__all__'])

@@ -3,8 +3,6 @@
 Collection of classes and functions to ease the translation of OCL expressions
 into python.
 
-.. moduleauthor:: jeanmariefavre
-
 * =   -> ==
 * x.isUndefined() -> isUndefined(x)
 * x.isUndefined() -> isUndefined(x)
@@ -63,17 +61,10 @@ UML based features
 
 
 
-
-from org.modelio.vcore.smkernel import SmList
-def select(self,f): return [x for x in self if f(x) ]
-a = selectedElements[0].getOwnedAttribute()
-print type(a),type(a[0])
-print select(a,lambda x:x.isModifiable())
-SmList.select = select
-print a.select(Attribute.isModifiable)
-
 """
 
+import logging
+log = logging.getLogger(__name__)
 
 __all__ = (
     'floor',
@@ -106,8 +97,11 @@ __all__ = (
 )
 
 import inspect
+import logging
+logging.getLogger('pyalaocl').addHandler(logging.NullHandler())
 
-class InfixedOperator:
+
+class InfixedOperator:  # old-class style required
     def __init__(self, function):
         self.function = function
 
@@ -363,13 +357,10 @@ def flatten(value):
     try:
         return value.flatten()
     except NameError:
-        # print "-----flatten(%s)"%value
         if isCollection(value):
-            #print "  collection"
             flat = []
             for e in value:
                 flat.extend(flatten(e))
-            # print "    -> %s" %flat
             return flat
         else:
             return [value]
@@ -384,7 +375,7 @@ from abc import ABCMeta, abstractmethod
 
 
 # noinspection PyClassicStyleClass
-class GenericCollection:
+class GenericCollection:  # old-class style required
     """
     Class used both to define brand new OCL collection (classes under
     Collection) but also to define JavaCollectionExtension. Due to restriction

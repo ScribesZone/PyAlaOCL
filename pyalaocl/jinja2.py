@@ -1,30 +1,29 @@
 # coding=utf-8
 
 import pyalaocl
-from pyalaocl import *
 
 __all__ = (
     'addOCLToEnvironment',
 )
 _FILTERS = {
-    'asSet': asSet,
-    'asBag': asBag,
-    'asSeq': asSeq,
+    'asSet': pyalaocl.asSet,
+    'asBag': pyalaocl.asBag,
+    'asSeq': pyalaocl.asSeq,
     #
     # ... could be extended ...
     #
 }
 
 _GLOBALS = {
-    'floor': floor,
-    'isUndefined': isUndefined,
-    'oclIsUndefined': oclIsUndefined,
-    'oclIsKindOf': oclIsKindOf,
-    'oclIsTypeOf': oclIsTypeOf,
-    'isCollection': isCollection,
-    'asSet': asSet,
-    'asBag': asBag,
-    'asSeq': emptyCollection
+    'floor': pyalaocl.floor,
+    'isUndefined': pyalaocl.isUndefined,
+    'oclIsUndefined': pyalaocl.oclIsUndefined,
+    'oclIsKindOf': pyalaocl.oclIsKindOf,
+    'oclIsTypeOf': pyalaocl.oclIsTypeOf,
+    'isCollection': pyalaocl.isCollection,
+    'asSet': pyalaocl.asSet,
+    'asBag': pyalaocl.asBag,
+    'asSeq': pyalaocl.emptyCollection
     #
     # ... could be extended ...
     #
@@ -54,6 +53,6 @@ except:
     WITH_MODELIO = False
 
 if WITH_MODELIO:
-    import pyalaocl.symbols
-    globalSymbols = pyalaocl.symbols.SymbolManager.symbols(kind='scope')
+    import pyalaocl.utils.symbols
+    globalSymbols = pyalaocl.utils.symbols.SymbolManager.symbols(kind='scope')
     _GLOBALS.update(globalSymbols)

@@ -6,8 +6,7 @@
 # >>> print Constraint.allInstances().name.asSet()
 # Set()
 
-import pyalaocl.modelio
-from pyalaocl.modelio import WITH_MODELIO, MetaInterface, Invalid
+from pyalaocl.modelio import WITH_MODELIO, MetaInterface
 
 if WITH_MODELIO:
 
@@ -52,12 +51,9 @@ if WITH_MODELIO:
     ]
 
     import pyalaocl
-    from pyalaocl import \
-        registerIsTypeOfFunction, registerIsKindOfFunction, Set
-
-    import pyalaocl.injector
-    from pyalaocl.injector import \
-        readOnlyPropertyOf, methodOf, export, attributeOf
+    import pyalaocl.utils.injector
+    # from  import \
+    #    readOnlyPropertyOf, methodOf, export, attributeOf
 
     # noinspection PyUnresolvedReferences
     from org.modelio.metamodel.uml.infrastructure import Stereotype
@@ -70,7 +66,7 @@ if WITH_MODELIO:
     #  Global symbols management
     #--------------------------------------------------------------------------
 
-    symbolGroups = ('stereotypes')
+    symbolGroups = ('stereotypes')  # TODO  used ?
 
 
 
@@ -82,19 +78,23 @@ if WITH_MODELIO:
     from org.modelio.metamodel.impl.uml.infrastructure import \
         MetaclassReferenceImpl
 
-    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        MetaclassReferenceImpl, 'metaProperty')
     def base(self):
         return MetaInterface.named(self.getReferencedClassName())
 
-    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        MetaclassReferenceImpl, 'metaProperty')
     def metaName(self):
         return self.base.metaName
 
-    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        MetaclassReferenceImpl, 'metaProperty')
     def metaPackage(self):
         return self.base.metaPackage
 
-    @readOnlyPropertyOf(MetaclassReferenceImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        MetaclassReferenceImpl, 'metaProperty')
     def metaFullName(self):
         return self.base.metaFullName
 
@@ -117,27 +117,33 @@ if WITH_MODELIO:
 
 
 
-    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        StereotypeImpl, 'metaProperty')
     def base(self):
         return MetaInterface.named(self.getBaseClassName())
 
-    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        StereotypeImpl, 'metaProperty')
     def metaName(self):
         return self.name
 
-    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        StereotypeImpl, 'metaProperty')
     def metaPackage(self):
         return '%s.%s' % (self.module.name, self.owner.name)
 
-    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        StereotypeImpl, 'metaProperty')
     def metaFullName(self):
         return '%s.%s' % (self.metaPackage, self.metaName)
 
-    @readOnlyPropertyOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.readOnlyPropertyOf(
+        StereotypeImpl, 'metaProperty')
     def allChildren(self):
-        return Set(self).closure('child').excluding(self).asSet()
+        return pyalaocl.Set(self).closure('child').excluding(self).asSet()
 
-    @methodOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(
+        StereotypeImpl, 'metaProperty')
     def new(self, *args, **kwargs):
         if self.base.metaFactory is not None:
             element = self.base.new(*args, **kwargs)
@@ -146,43 +152,48 @@ if WITH_MODELIO:
         else:
             NotImplementedError('Modelio do not provide a createXXX method')
 
-    @methodOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(
+        StereotypeImpl, 'metaProperty')
     def __call__(self, *args, **kwargs):
         return self.new(*args, **kwargs)
 
-    @methodOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(
+        StereotypeImpl, 'metaProperty')
     def allTypeInstances(self):
         return \
             self.base.allInstances().select(
                 _isTypeOfSTEREOTYPEMethodName(self)).asSet()
 
-    @methodOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(
+        StereotypeImpl, 'metaProperty')
     def allInstances(self):
         raise NotImplementedError()
 
     # FIXME: should take inheritance into account
 
-    @methodOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(
+        StereotypeImpl, 'metaProperty')
     def named(self, name):
         r = self.allInstances().select(
             lambda e: e.name == name)
         if len(r) == 1:
             return r[0]
         elif len(r) == 0:
-            raise Invalid('No %s named "%s"' % (self.name, name))
+            raise pyalaocl.Invalid('No %s named "%s"' % (self.name, name))
         else:
-            raise Invalid(
+            raise pyalaocl.Invalid(
                 'More than one element named %s (%s elements)' \
                 % (name, str(len(r))))
 
-    @methodOf(StereotypeImpl, 'metaProperty')
+    @pyalaocl.utils.injector.methodOf(
+        StereotypeImpl, 'metaProperty')
     def selectByAttribute(self, attribute, value):
         return self.allInstances.select(
             lambda element: getattr(element, attribute) == value
         )
 
 
-    @methodOf(StereotypeImpl, 'profile')
+    @pyalaocl.utils.injector.methodOf(StereotypeImpl, 'profile')
     def addedTo(self, element):
         moduleName = self.module.name
         stereotypeName = self.name
@@ -232,11 +243,11 @@ if WITH_MODELIO:
 
             name = _isTypeOfSTEREOTYPEMethodName(stereotype)
             p = _newIsSTEREOTYPEProperty(stereotype)
-            attributeOf(base, 'profile', name, p)
+            pyalaocl.utils.injector.attributeOf(base, 'profile', name, p)
 
             name = _isKindOfSTEREOTYPEMethodName(stereotype)
             p = _newIsKindOfSTEREOTYPEProperty(stereotype)
-            attributeOf(base, 'profile', name, p)
+            pyalaocl.utils.injector.attributeOf(base, 'profile', name, p)
 
 
 
@@ -247,7 +258,7 @@ if WITH_MODELIO:
         for stereotype in Stereotype.allInstances():
             name = stereotype.name      # .title()#FIXME Title lowercase
             # FIXME: should not be redef true
-            export(globals(), 'sterotype', name, stereotype,
+            pyalaocl.utils.injector.export(globals(), 'sterotype', name, stereotype,
                    allowRedefinition=True)
 
     def _registerIsTypeOfAndIsKindOfOCLPredicate():
@@ -268,8 +279,8 @@ if WITH_MODELIO:
                     return False
             else:
                 return False
-        registerIsTypeOfFunction(_isTypeOf)
-        registerIsKindOfFunction(_isKindOf)
+        pyalaocl.registerIsTypeOfFunction(_isTypeOf)
+        pyalaocl.registerIsKindOfFunction(_isKindOf)
 
     def _addGlobalFunctionsIsSTEREOTYPE():
         pass
@@ -290,7 +301,7 @@ if WITH_MODELIO:
     # noinspection PyUnresolvedReferences
     from org.modelio.metamodel.impl.uml.infrastructure import NoteTypeImpl
 
-    @methodOf(NoteTypeImpl, 'note')
+    @pyalaocl.utils.injector.methodOf(NoteTypeImpl, 'note')
     def allInstances(noteType):
         all_bases = noteType.ownerStereotype.base.allInstances()
         return all_bases.descriptor.select(
@@ -331,11 +342,11 @@ if WITH_MODELIO:
             for noteType in noteContainer.definedNoteType:
                 name = noteType.name + 'Note'  #FIXME Title put lowercase
                 p = _newNOTETYPENoteProperty(noteType)
-                attributeOf(base, 'profile', name, p)
+                pyalaocl.utils.injector.attributeOf(base, 'profile', name, p)
 
                 name = noteType.name + 'Notes'  #FIXME Title put lowercase
                 p = _newNOTETYPENotesProperty(noteType)
-                attributeOf(base, 'profile', name, p)
+                pyalaocl.utils.injector.attributeOf(base, 'profile', name, p)
 
     # TODO ADD A GLOBAL NAMES ?  NOTETYPE, isNOTETYPE, isKindOf/TypeOf, new
 

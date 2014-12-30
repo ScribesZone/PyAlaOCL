@@ -6,10 +6,7 @@ __all__ = (
 )
 
 import pyalaocl
-from pyalaocl import Set, Bag, Seq, Invalid
-
-import pyalaocl.injector
-from pyalaocl.injector import addSuperclass
+import pyalaocl.utils.injector
 
 
 #==============================================================================
@@ -99,13 +96,13 @@ class JavaCollectionExtension(pyalaocl.GenericCollection):
         return self.asCollection().sortedBy(expression)
 
     def asSet(self):
-        return Set.new(self)
+        return pyalaocl.Set.new(self)
 
     def asBag(self):
-        return Bag.new(self)
+        return pyalaocl.Bag.new(self)
 
     def asSeq(self):
-        return Seq.new(self)
+        return pyalaocl.Seq.new(self)
 
     # abstract method
     def asCollection(self):
@@ -134,58 +131,59 @@ class JavaSetExtension(JavaCollectionExtension):
         return False
 
     def duplicates(self):
-        return Bag.new()
+        return pyalaocl.Bag.new()
 
     def asCollection(self):
-        return Set.new(self)
+        return pyalaocl.Set.new(self)
 
     def emptyCollection(self):
-        return Set.new()
+        return pyalaocl.Set.new()
 
 
 # noinspection PyClassicStyleClass
 class JavaListExtension(JavaCollectionExtension):
 
     def hasDuplicates(self):
-        return Bag.new(self).hasDuplicates()
+        return pyalaocl.Bag.new(self).hasDuplicates()
 
     def duplicates(self):
-        return Bag.new(self).duplicates()
+        return pyalaocl.Bag.new(self).duplicates()
 
     def asCollection(self):
-        return Seq.new(self)
+        return pyalaocl.Seq.new(self)
 
     def emptyCollection(self):
-        return Seq.new()
+        return pyalaocl.Seq.new()
 
     def append(self,value):
-        return Seq.new(self+[value])
+        return pyalaocl.Seq.new(self+[value])
 
     def prepend(self,value):
-        return Seq.new([value]+self)
+        return pyalaocl.Seq.new([value]+self)
 
     def subSequence(self,lower,upper):
         try:
-            return Seq.new(list(self)[lower - 1:upper])
+            return pyalaocl.Seq.new(list(self)[lower - 1:upper])
         except:
-            raise Invalid(".subSequence(%s,%s) failed: No such element."%(lower,upper))
+            raise pyalaocl.Invalid(
+                ".subSequence(%s,%s) failed: No such element."%(lower,upper))
     def at(self,index):
         try:
             return self.get(index-1)
         except:
-            raise Invalid(".at(%s) failed: No such element." % index)
+            raise pyalaocl.Invalid(".at(%s) failed: No such element." % index)
 
     def first(self):
         try:
             return self.get(0)
         except:
-            raise Invalid(".at(%s) failed: No such element.")
+            raise pyalaocl.Invalid(".at(%s) failed: No such element.")
 
     def last(self):
         try:
             return self.get(self.size()-1)
         except:
-            raise Invalid(".at(%s) failed: No such element.")
+            raise pyalaocl.Invalid(".at(%s) failed: No such element.")
 
 
 
@@ -203,9 +201,9 @@ import java.lang
 # from java.lang import Iterable
 
 JavaJDKConversionRules = (
-    (java.util.Set,Set),
-    (java.util.List,Seq),
-    (java.lang.Iterable,Seq)
+    (java.util.Set, pyalaocl.Set),
+    (java.util.List, pyalaocl.Seq),
+    (java.lang.Iterable, pyalaocl.Seq)
 )
 pyalaocl.CONVERTER.registerConversionRules('java',JavaJDKConversionRules)
 
@@ -223,8 +221,8 @@ JAVA_JDK_SETS = [
 
 JAVA_JDK_COLLECTIONS = JAVA_JDK_SETS + JAVA_JDK_LISTS
 
-addSuperclass(JavaSetExtension,JAVA_JDK_SETS)
-addSuperclass(JavaListExtension,JAVA_JDK_LISTS)
+pyalaocl.utils.injector.addSuperclass(JavaSetExtension,JAVA_JDK_SETS)
+pyalaocl.utils.injector.addSuperclass(JavaListExtension,JAVA_JDK_LISTS)
 
 
 
