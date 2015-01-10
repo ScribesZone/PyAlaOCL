@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
   name = 'pyalaocl',
-  packages = ['pyalaocl'],
+  packages = ['pyalaocl','pyalaocl.useocl','pyalaocl.utils','pyalaocl.modelio'],
   version = '0.1',
   description = 'ala OCL expressions for Python, OCL refering UML Object Constraint Language standard',
   author = 'megaplanet',
