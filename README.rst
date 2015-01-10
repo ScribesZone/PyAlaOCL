@@ -4,13 +4,4 @@ The documentation of the project can be viewed at http://pyalaocl.readthedocs.or
 
 .. image:: https://readthedocs.org/projects/pyalaocl/badge/?version=latest
    :target: https://readthedocs.org/projects/pyalaocl/?badge=latest
-:alt: Documentation Status
-
-
-
-
-    TODO list
-
-
-Limitations
------------
+   :alt: Documentation Status
