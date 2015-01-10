@@ -147,7 +147,8 @@ class ObjectSymbolChange(SymbolChange):
             self.wasDefined = False
             self.valueBefore = None
         setattr(object_, symbol, value)
-        if hasattr(object_,'__module__',) and object_.__module__ in sys.modules:
+        if hasattr(object_,'__module__',) and object_.__module__ \
+                in sys.modules:
             self.module = sys.modules[object_.__module__]
 
     def undo(self):

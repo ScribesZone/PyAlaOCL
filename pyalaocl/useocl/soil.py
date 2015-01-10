@@ -133,26 +133,3 @@ class UseSoilSpecification(object):
 
             #---- unknown or unimplemented commands ---------------------------
             raise NotImplementedError(line)
-
-
-# execute tests if launched from command line
-if __name__ == "__main__":
-    import os
-    import sys
-
-    test_cases_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '..', 'tests', 'testcases', 'soil')
-    test_files = [f
-                  for f in os.listdir(test_cases_dir) if f.endswith('.soil')]
-
-    for test_file in test_files:
-        print '-' * 10 + ' Parsing %s\n\n' % test_file
-        use = analyser.UseOCLModel(test_cases_dir + os.sep + test_file)
-        if use.isValid:
-            print use.model
-        else:
-            print >> sys.stderr, 'Failed to create canonical form'
-            for error in use.errors:
-                print >> sys.stderr, error
-                # UseOCLConverter.convertCanOCLInvariants(use.canonicalLines)

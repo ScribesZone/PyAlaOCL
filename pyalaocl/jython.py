@@ -5,6 +5,9 @@
 __all__ = (
 )
 
+import platform
+_WITH_JYTHON = (platform.python_implementation() == 'Jython')
+
 import pyalaocl
 import pyalaocl.utils.injector
 
@@ -200,35 +203,34 @@ import java.lang
 # noinspection PyUnresolvedReferences
 # from java.lang import Iterable
 
-JavaJDKConversionRules = (
-    (java.util.Set, pyalaocl.Set),
-    (java.util.List, pyalaocl.Seq),
-    (java.lang.Iterable, pyalaocl.Seq)
-)
-pyalaocl.CONVERTER.registerConversionRules('java',JavaJDKConversionRules)
+def load():
+    JavaJDKConversionRules = (
+        (java.util.Set, pyalaocl.Set),
+        (java.util.List, pyalaocl.Seq),
+        (java.lang.Iterable, pyalaocl.Seq)
+    )
+    pyalaocl.CONVERTER.registerConversionRules('java',JavaJDKConversionRules)
 
-JAVA_JDK_LISTS = [
-    java.util.ArrayList,
-    java.util.Vector,
-    java.util.LinkedList,
-]
+    JAVA_JDK_LISTS = [
+        java.util.ArrayList,
+        java.util.Vector,
+        java.util.LinkedList,
+    ]
 
-JAVA_JDK_SETS = [
-    java.util.EnumSet,
-    java.util.HashSet,
-    java.util.TreeSet,
-]
+    JAVA_JDK_SETS = [
+        java.util.EnumSet,
+        java.util.HashSet,
+        java.util.TreeSet,
+    ]
 
-JAVA_JDK_COLLECTIONS = JAVA_JDK_SETS + JAVA_JDK_LISTS
+    JAVA_JDK_COLLECTIONS = JAVA_JDK_SETS + JAVA_JDK_LISTS
 
-pyalaocl.utils.injector.addSuperclass(JavaSetExtension,JAVA_JDK_SETS)
-pyalaocl.utils.injector.addSuperclass(JavaListExtension,JAVA_JDK_LISTS)
-
-
+    pyalaocl.utils.injector.addSuperclass(JavaSetExtension,JAVA_JDK_SETS)
+    pyalaocl.utils.injector.addSuperclass(JavaListExtension,JAVA_JDK_LISTS)
 
 
-# execute tests if launched from command line
-if __name__ == "__main__":
-    import doctest
+if _WITH_JYTHON:
+    load()
 
-    doctest.testmod()
+
+

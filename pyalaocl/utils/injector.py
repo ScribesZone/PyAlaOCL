@@ -309,7 +309,3 @@ def export(scope, group, name, value,
 
 
 
-# execute tests if launched from command line
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

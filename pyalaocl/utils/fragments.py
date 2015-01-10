@@ -253,9 +253,3 @@ class RegexpFragmenter(Fragmenter):
             return None
 
 
-
-# execute tests if launched from command line
-if __name__ == "__main__":
-    import doctest
-
-    doctest.testmod()

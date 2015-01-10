@@ -1,4 +1,16 @@
 # coding=utf-8
+"""
+The pyalaocl.jinja2 module provides the necessary features to use pyalaocl
+expressions into jinja2 templates. To be more precise a function is provided
+to augment jinja2 environment with:
+
+- jinja filters. asSet, asBag, asSeq can be used as filters.
+
+- jinja global symbols.
+
+In the context of Modelio, global functions are also added as global symbols.
+
+"""
 
 import pyalaocl
 

@@ -36,7 +36,7 @@ Boolean
 * true                       -> True
 * false                      -> False
 * xor                        -> ^  but it must be applied between boolean
-* implies                    -> |implies|
+* implies                    -> \|implies|
 * if c then a else b endif   -> ( a if c else b )
 
 Enumeration
@@ -217,10 +217,11 @@ def oclIsKindOf(value1,value2):
     :param value: A scalar value, a collection or an object.
     :type value; Any
     :param aType: The type to check the value against
-                  (e.g. int, float, str, unicode, bool or a class)
+    (e.g. int, float, str, unicode, bool or a class)
     :type aType: type
     :return: True if value is compatible with the type aType.
     :rtype: bool
+
     Examples:
         >>> print oclIsKindOf(3,int)
         True
@@ -259,10 +260,11 @@ def oclIsTypeOf(value1,value2):
     :param value: A scalar value, a collection or an object.
     :type value; Any
     :param aType: The type to check the value against
-                  (e.g. int, float, str, unicode, bool or a class)
+    (e.g. int, float, str, unicode, bool or a class)
     :type aType: type
     :return: True if value is compatible with the type aType.
     :rtype: bool
+
     Examples:
         >>> print oclIsTypeOf("hello",str)
         True
@@ -707,7 +709,7 @@ class GenericCollection:  # old-class style required
 
 from collections import deque
 
-class Collection(object,GenericCollection):
+class Collection(object, GenericCollection):
     """
     Base class for OCL collections.
     Collections are either:
@@ -879,6 +881,7 @@ class Set(Collection):
         Return the size of the set.
         :return: The size of the set.
         :rtype: int
+
         Examples:
             >>> Set(1,4,2,1,1).size()
             3
@@ -906,6 +909,7 @@ class Set(Collection):
         :type value: any
         :return: 1 if the element is in the set, 0 otherwise.
         :rtype: bool
+
         Examples:
             >>> Set(1,3,"a").count("3")
             0
@@ -924,6 +928,7 @@ class Set(Collection):
         :type value: any
         :return: A set including this element.
         :rtype: Set
+
         Examples:
             >>> Set(1,3,"a").including("3") == Set(1,"3",3,"a")
             True
@@ -941,6 +946,7 @@ class Set(Collection):
         :type value: any
         :return: A set including this element.
         :rtype: Set
+
         Examples:
             >>> Set(1,3,"a").excluding("3") == Set(1,3,"a")
             True
@@ -958,6 +964,7 @@ class Set(Collection):
         :type anyCollection: collection
         :return: A set including all values added plus previous set elements.
         :rtype: Set
+
         Examples:
             >>> Set(1,3,'a').union([2,3,2]) == Set(1,3,"a",2)
             True
@@ -988,6 +995,7 @@ class Set(Collection):
         :type anyCollection: collection
         :return: A set including all values added plus previous set elements.
         :rtype: Set
+
         Examples:
             >>> Set(1,3,"a").intersection(["a","a",8]) == Set("a")
             True
@@ -1013,10 +1021,11 @@ class Set(Collection):
         """
         Remove from the set all values in the collection.
         :param anyCollection: Any collection of values to be discarded from
-                this set.
+        this set.
         :type anyCollection: collection
         :return: This set without the values in the collection.
         :rtype: Set
+
         Examples:
 
             >>> Set(1,3,"a").difference([2,3,2,'z']) == Set(1,"a")
@@ -1049,6 +1058,7 @@ class Set(Collection):
         :type anyCollection: collection
         :return: The symmetric difference.
         :rtype: Set
+
         Examples:
             >>> Set(1,2).symmetricDifference(Set(3,2)) == Set(1,3)
             True
@@ -1095,9 +1105,9 @@ class Set(Collection):
         """
         If the set is a set of collections, then return the set-union of all
         its elements.
-
         :return: Set
         :rtype: Set
+
         Examples:
             >>> Set(Set(2)).flatten() == Set(2)
             True
@@ -1726,6 +1736,7 @@ class Seq(Collection):
         :type value: any
         :return: A set including this element.
         :rtype: Set
+
         Examples:
             >>> Seq(1,3,"a").excluding("3") == Seq(1,3,"a")
             True
@@ -2079,15 +2090,3 @@ def isCollection(value,language=None):
     return CONVERTER.isCollection(value,language=language)
 
 
-# def asCollection(anyCollection):
-#     if isCollection(anyCollection):
-#         return anyCollection
-#     elif isJavaCollection(anyCollection):
-#         pass
-
-
-
-# execute tests if launched from command line
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()

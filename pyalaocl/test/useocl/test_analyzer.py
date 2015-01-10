@@ -2,19 +2,23 @@
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
-log = logging.getLogger(__name__)
+log = logging.getLogger('test.'+__name__)
 
-
+from pyalaocl.test.useocl import TEST_CASES_DIRECTORY
 
 import os
-import sys
+import pyalaocl.test.useocl
 import pyalaocl.useocl.analyzer
-
-TEST_CASES_DIRECTORY = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'testcases')
+from nose.plugins.attrib import attr
 
 
-def testUseOclModel():
+
+def test_UseOclModel_Simple():
+    check_isValid('Demo.use')
+
+
+@attr('slow')
+def testGenerator_UseOclModel_full():
     test_files = [
         'AssociationClass.use',
         'Demo.use',
@@ -59,23 +63,23 @@ def testUseOclModel():
         'bart.use',
     ]
 
-    test_dir_2 = TEST_CASES_DIRECTORY + os.sep + 'use_tests'
-    test_files2 = ['use_tests' + os.sep + f
+    test_dir_2 = TEST_CASES_DIRECTORY + os.sep + 'use'
+    test_files2 = ['use' + os.sep + f
                    for f in os.listdir(test_dir_2) if f.endswith('.use')]
     all_test_files = test_files2 + test_files
-    print ('Starting %s tests',len(all_test_files))
-    for test_file in all_test_files[0:-1]:
-        print '-' * 10 + ' Parsing %s\n\n' % test_file
-        use = pyalaocl.useocl.analyzer.UseOCLModel(
-                    TEST_CASES_DIRECTORY + os.sep + test_file)
-        if use.isValid:
-            print use.model
-        else:
-            print >> sys.stderr, 'Failed to create canonical form'
-            for error in use.errors:
-                print >> sys.stderr, error
-                # UseOCLConverter.convertCanOCLInvariants(use.canonicalLines)
 
-# execute tests if launched from command line
-if __name__ == "__main__":
-    testUseOclModel()
+    for test_file in all_test_files:
+        yield check_isValid, test_file
+
+
+def check_isValid(testFile):
+    useModel = pyalaocl.useocl.analyzer.UseOCLModel(
+        TEST_CASES_DIRECTORY + os.sep + testFile)
+    if useModel.isValid:
+        print useModel.model
+    assert useModel.isValid
+        #else:
+    #    print >> sys.stderr, 'Failed to create canonical form'
+    #    for error in use.errors:
+    #        print >> sys.stderr, error
+    #        # UseOCLConverter.convertCanOCLInvariants(use.canonicalLines)

@@ -52,7 +52,6 @@ class UseEvaluationResults(object):
             self.__parseValidationOutput(self.output_text)
 
 
-
     #
     def __parseValidationOutput(self, text):
 
@@ -183,29 +182,3 @@ class UseEvaluationResults(object):
             self.modelEvaluations.append(model_evaluation)
 
 
-def test():
-    test_cases_dir = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '..', 'tests', 'testcases')
-    soil_dir = 'soil'
-    test_cases = [
-        {'model': 'Project.use',
-         'states': ['project1.soil', 'project3.soil']}
-    ]
-
-    for test_case in test_cases:
-        model_file = os.path.join(test_cases_dir, test_case['model'])
-        use_model = UseOCLModel(model_file)
-        if not use_model.isValid:
-            print 'ERROR: %s is not a valid model' % model_file
-        else:
-            state_files = [
-                os.path.join(test_cases_dir, soil_dir, soil_file)
-                for soil_file in test_case['states']
-            ]
-            print ('-' * 10 + ' Validation of %s\n\n' % test_case)
-            validation_result = UseEvaluationResults(use_model, state_files)
-
-# execute tests if launched from command line
-if __name__ == "__main__":
-    test()

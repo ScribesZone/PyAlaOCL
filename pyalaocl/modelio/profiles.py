@@ -6,11 +6,9 @@
 # >>> print Constraint.allInstances().name.asSet()
 # Set()
 
-from pyalaocl.modelio import WITH_MODELIO, MetaInterface
+import pyalaocl.modelio
 
-if WITH_MODELIO:
-
-
+if pyalaocl.modelio.WITH_MODELIO:
 
     __all__ = [
         #  ...
@@ -81,7 +79,8 @@ if WITH_MODELIO:
     @pyalaocl.utils.injector.readOnlyPropertyOf(
         MetaclassReferenceImpl, 'metaProperty')
     def base(self):
-        return MetaInterface.named(self.getReferencedClassName())
+        return pyalaocl.modelio.MetaInterface.named(
+            self.getReferencedClassName())
 
     @pyalaocl.utils.injector.readOnlyPropertyOf(
         MetaclassReferenceImpl, 'metaProperty')
@@ -120,7 +119,7 @@ if WITH_MODELIO:
     @pyalaocl.utils.injector.readOnlyPropertyOf(
         StereotypeImpl, 'metaProperty')
     def base(self):
-        return MetaInterface.named(self.getBaseClassName())
+        return pyalaocl.modelio.MetaInterface.named(self.getBaseClassName())
 
     @pyalaocl.utils.injector.readOnlyPropertyOf(
         StereotypeImpl, 'metaProperty')
@@ -254,7 +253,8 @@ if WITH_MODELIO:
 
 
     def _addGlobalStereotypeNames():
-        metaInterfaceNames = MetaInterface.allInstances().metaName
+        metaInterfaceNames = \
+            pyalaocl.modelio.MetaInterface.allInstances().metaName
         for stereotype in Stereotype.allInstances():
             name = stereotype.name      # .title()#FIXME Title lowercase
             # FIXME: should not be redef true

@@ -1,59 +1,118 @@
 # coding=utf-8
 
-
-# FIXME
-USE_OCL_COMMAND = 'use'
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger('test.' + __name__)
 
 import os
 import tempfile
 import operator
-
+import re
 
 class USEEngine(object):
+    USE_OCL_COMMAND = 'use'
+    """
+    Name of the use command.
+    If the default value ('use') does not work, for instance if
+    the use binary is not in the system path, you can change this
+    value either in the source, or programmatically using
+    USEEngine.USE_OCL_COMMAND = r'c:\Path\To\UseCommand\bin\use'
+    """
 
-    _soilHelperDirectory = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        '..', '..', 'res')
+    command = None
+    """ Last command executed by the engine"""
 
     commandExitCode = None
-    command = None
+    """ Exit code of last execution"""
+
     out = None
+    """ output of last execution (in case of separated out/err)"""
+
     err = None
+    """ errors of last execution (in case of separated out/err)"""
+
     outAndErr = None
+    """ output/errors of last execution if merged out/err """
+
+
+    @classmethod
+    def __soilHelper(cls, name):
+        return os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            '..', 'res', name)
+
+
+    @classmethod
+    def __execute(cls, useFile, soilFile, errWithOut=False):
+        """ Execute use command with the given model and given soil file.
+        The soil file must terminate by a 'quit' statement so that the process
+        finish.
+        """
+        def readAndRemove(filename):
+            with open(filename, 'r') as f:
+                _ = f.read()
+            os.remove(filename)
+            return _
+
+        if errWithOut:
+            #-- one unique output file for output and errors
+            (f, output_filename) = tempfile.mkstemp(suffix='.txt', text=True)
+            os.close(f)
+            errors_filename = None
+            redirection = '>%s 2>&1' % output_filename
+            cls.out = None
+            cls.err = None
+        else:
+            # -- two temporary files for output and errors
+            (f, output_filename) = tempfile.mkstemp(suffix='.use', text=True)
+            os.close(f)
+            # prepare temporary file for errors
+            (f, errors_filename) = tempfile.mkstemp(suffix='.err', text=True)
+            os.close(f)
+            redirection = '>%s 2>%s' % (output_filename, errors_filename)
+            cls.outAndErr = None
+
+
+        commandPattern = '%s -nogui %s %s '+ redirection
+        cls.command = (commandPattern
+                           % (cls.USE_OCL_COMMAND, useFile, soilFile))
+
+        # Execute the command
+        log.info('Execute USE OCL: %s', cls.command)
+        cls.commandExitCode = os.system(cls.command)
+        log.info('Execute USE OCL returned %s exit code', cls.commandExitCode)
+
+        if errWithOut:
+             if cls.commandExitCode != 0:
+                 cls.outAndErr = None
+             else:
+                 cls.outAndErr = readAndRemove(output_filename)
+        else:
+            cls.out = readAndRemove(output_filename)
+            cls.err = readAndRemove(errors_filename)
+
+        return cls.commandExitCode
+
+
+    @classmethod
+    def useVersion(cls):
+        cls.__execute(
+            cls.__soilHelper('empty.use'),
+            cls.__soilHelper('quit.soil'))
+        first_line = cls.out.split('\n')[0]
+        m = re.match( r'use version (?P<version>[0-9\.]+),', first_line)
+        if m:
+            return m.group('version')
+        else:
+            raise EnvironmentError('Cannot execute USE OCL or get its version')
+
 
 
     @classmethod
     def analyzeUSEModel(cls, useFileName):
-        soil_file = os.path.join(
-            cls._soilHelperDirectory, 'infoModelAndQuit.soil')
-
-        # prepare temporary file for output
-        (f, output_filename) = tempfile.mkstemp(suffix='.use', text=True)
-        os.close(f)
-
-        # prepare temporary file for errors
-        (f, errors_filename) = tempfile.mkstemp(suffix='.err', text=True)
-        os.close(f)
-
-        cls.outAndErr = None
-        cls.command = '%s -nogui %s %s >%s 2>%s' \
-              % (USE_OCL_COMMAND, useFileName, soil_file,
-                 output_filename, errors_filename)
-
-        # Execute the command
-        cls.commandExitCode = os.system(cls.command)
-
-        # Read errors
-        with open(errors_filename, 'r') as f:
-            cls.err = f.read()
-        os.remove(errors_filename)
-
-        # Read output
-        with open(output_filename, 'r') as f:
-            cls.out = f.read()
-        os.remove(output_filename)
-
+        cls.__execute(
+            useFileName,
+            cls.__soilHelper('infoModelAndQuit.soil'))
         return cls.commandExitCode
 
 
@@ -67,7 +126,7 @@ class USEEngine(object):
             sequence of state validation. That is, it loads and checks each
             state one after each other.
 
-            The soil driver sequence generated look like:
+            The soil driver sequence generated looks like:
                     reset
                     open file1.soil
                     check
@@ -100,26 +159,8 @@ class USEEngine(object):
         with open(driver_filename, 'w') as f:
             f.write(driver_sequence)
 
-        #-- prepare output file
-        (f, output_filename) = tempfile.mkstemp(suffix='.txt', text=True)
-        os.close(f)
+        cls.__execute(
+            modelFile,
+            driver_filename)
 
-        cls.out = None
-        cls.err = None
-        #-- execute the command
-        cls.command = '%s -nogui %s %s >%s 2>&1' \
-                        % (
-            USE_OCL_COMMAND, modelFile, driver_filename, output_filename)
-        cls.commandExitCode = os.system(cls.command)
-
-        #-- process the result
-        if cls.commandExitCode != 0:
-            cls.outAndErr = None
-        else:
-            with open(output_filename, 'r') as f:
-                cls.outAndErr = f.read()
-
-        #-- cleaning
-        os.remove(output_filename)
-        os.remove(driver_filename)
         return cls.outAndErr
