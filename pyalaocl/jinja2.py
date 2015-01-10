@@ -55,14 +55,16 @@ def addOCLToEnvironment(jinja2Environment):
     jinja2Environment.filters.update(_FILTERS)
     jinja2Environment.globals.update(_GLOBALS)
 
-
-try:
-    # noinspection PyUnresolvedReferences
-    from org.modelio.api.modelio import Modelio
-
-    WITH_MODELIO = True
-except:
+import sys
+if 'sphinx' in sys.modules:
     WITH_MODELIO = False
+else:
+    try:
+        # noinspection PyUnresolvedReferences
+        from org.modelio.api.modelio import Modelio
+        WITH_MODELIO = True
+    except:
+        WITH_MODELIO = False
 
 if WITH_MODELIO:
     import pyalaocl.utils.symbols
