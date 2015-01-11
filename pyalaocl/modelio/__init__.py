@@ -1,10 +1,15 @@
 # coding=utf-8
-try:
-    # noinspection PyUnresolvedReferences
-    from org.modelio.api.modelio import Modelio
-    WITH_MODELIO = True
-except:
+import sys
+
+if 'sphinx' in sys.modules:
     WITH_MODELIO = False
+else:
+    try:
+        # noinspection PyUnresolvedReferences
+        from org.modelio.api.modelio import Modelio
+        WITH_MODELIO = True
+    except:
+        WITH_MODELIO = False
 
 if WITH_MODELIO:
 
