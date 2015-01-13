@@ -3,14 +3,15 @@
 import os
 import re
 
-import utils.sources
-from utils.errors import SourceError, LocalizedError
-from pyalaocl.useocl.useengine import USEEngine
-from pyalaocl.useocl.model import Model, Enumeration, Class, Attribute, \
-    Operation, Invariant, Association, Role, AssociationClass, \
-    PreCondition, PostCondition, BasicType
+import pyalaocl.utils.errors
+import pyalaocl.utils.sources
+import pyalaocl.useocl.useengine
+import pyalaocl.useocl.model
+#from pyalaocl.useocl.model import Model, Enumeration, Class, Attribute, \
+#    Operation, Invariant, Association, Role, AssociationClass, \
+#    PreCondition, PostCondition, BasicType
 
-class UseOCLModel(utils.sources.SourceFile):
+class UseOCLModel(pyalaocl.utils.sources.SourceFile):
     def __init__(self, useModelSourceFile):
         super(UseOCLModel, self).__init__(useModelSourceFile)
         self.isValid = None  # Don't know yet
@@ -46,19 +47,19 @@ class UseOCLModel(utils.sources.SourceFile):
     #--------------------------------------------------------------------------
 
     def __createCanonicalForm(self):
-
-        self.commandExitCode = USEEngine.analyzeUSEModel(self.fileName)
+        engine = pyalaocl.useocl.useengine.USEEngine
+        self.commandExitCode = engine.analyzeUSEModel(self.fileName)
         if self.commandExitCode != 0:
             self.isValid = False
             self.errors = []
-            for line in USEEngine.err.splitlines():
+            for line in engine.err.splitlines():
                 self.errors.append(self.__parseErrorLine(line))
         else:
             self.isValid = True
             self.errors = []
             # Remove 2 lines at the beginning (use intro + command)
             # and two lines at the end (information + quit command)
-            self.canonicalLines = USEEngine.out.splitlines()[2:-2]
+            self.canonicalLines = engine.out.splitlines()[2:-2]
             self.canonicalLength = len(self.canonicalLines)
         return self.isValid
 
@@ -69,7 +70,7 @@ class UseOCLModel(utils.sources.SourceFile):
         m = re.match(p, line)
         if m:
             # print 'ERROR', line
-            return LocalizedError(
+            return pyalaocl.utils.errors.LocalizedError(
                 self,
                 m.group('message'),
                 int(m.group('line')),
@@ -77,7 +78,7 @@ class UseOCLModel(utils.sources.SourceFile):
                 m.group('filename')),
             )
         else:
-            return SourceError(self, line)
+            return pyalaocl.utils.errors.SourceError(self, line)
 
 
     def __parseCanonicalLinesAndCreateModel(self):
@@ -123,7 +124,7 @@ class UseOCLModel(utils.sources.SourceFile):
             r = r'^model (?P<name>\w+)$'
             m = re.match(r, line)
             if m:
-                self.model = Model(
+                self.model = pyalaocl.useocl.model.Model(
                     name=m.group('name'),
                     code=self.sourceLines)
                 continue
@@ -132,7 +133,7 @@ class UseOCLModel(utils.sources.SourceFile):
             r = r'^enum (?P<name>\w+) { (?P<literals>.*) };?$'
             m = re.match(r, line)
             if m:
-                Enumeration(
+                pyalaocl.useocl.model.Enumeration(
                     name=m.group('name'),
                     model=self.model,
                     code=line,
@@ -150,7 +151,7 @@ class UseOCLModel(utils.sources.SourceFile):
                 else:
                     superclasses = m.group('superclasses').split(',')
                 current_class = \
-                    Class(
+                    pyalaocl.useocl.model.Class(
                         name=m.group('name'),
                         model=self.model,
                         isAbstract=m.group('abstract') == 'abstract',
@@ -170,7 +171,7 @@ class UseOCLModel(utils.sources.SourceFile):
                 else:
                     superclasses = m.group('superclasses').split(',')
                 ac = \
-                    AssociationClass(
+                    pyalaocl.useocl.model.AssociationClass(
                         name=m.group('name'),
                         model=self.model,
                         isAbstract=m.group('abstract') == 'abstract',
@@ -186,7 +187,7 @@ class UseOCLModel(utils.sources.SourceFile):
             if m:
                 if current_class is not None:
                     # This could be an association class
-                    Attribute(
+                    pyalaocl.useocl.model.Attribute(
                         name=m.group('name'),
                         class_=current_class,
                         code=line,
@@ -206,7 +207,7 @@ class UseOCLModel(utils.sources.SourceFile):
                 if current_class is not None:
                     # This could be an association class
                     operation = \
-                        Operation(
+                        pyalaocl.useocl.model.Operation(
                             name=m.group('name'),
                             model=self.model,
                             class_=current_class,
@@ -239,7 +240,7 @@ class UseOCLModel(utils.sources.SourceFile):
             m = re.match(r, line)
             if m:
                 current_association = \
-                    Association(
+                    pyalaocl.useocl.model.Association(
                         name=m.group('name'),
                         model=self.model,
                         kind=m.group('kind'))
@@ -283,7 +284,7 @@ class UseOCLModel(utils.sources.SourceFile):
                         qualifiers = \
                             [tuple(q.split(' : '))
                              for q in m.group('qualifiers').split(', ')]
-                    Role(
+                    pyalaocl.useocl.model.Role(
                         name=m.group('name'),
                         association=current_association,
                         type=m.group('type'),
@@ -304,7 +305,7 @@ class UseOCLModel(utils.sources.SourceFile):
             if m:
                 variables = m.group('vars').split(', ')
                 current_invariant = \
-                    Invariant(
+                    pyalaocl.useocl.model.Invariant(
                         name=m.group('name'),
                         model=self.model,
                         class_=m.group('class'),
@@ -348,10 +349,10 @@ class UseOCLModel(utils.sources.SourceFile):
                     operation = current_operation_condition['operation']
                     v = m.groupdict()
                     if v['kind'] == 'pre':
-                        PreCondition(
+                        pyalaocl.useocl.model.PreCondition(
                             v['name'], self.model, operation, v['expression'])
                     else:
-                        PostCondition(
+                        pyalaocl.useocl.model.PostCondition(
                             v['name'], self.model, operation, v['expression'])
 
                     current_operation_condition = None
@@ -380,7 +381,8 @@ class UseOCLModel(utils.sources.SourceFile):
             elif name in self.model.basicTypes:
                 return self.model.basicTypes[name]
             else:
-                self.model.basicTypes[name] = BasicType(name)
+                self.model.basicTypes[name] = \
+                    pyalaocl.useocl.model.BasicType(name)
                 return self.model.basicTypes[name]
 
         def __resolveClassType(name):
