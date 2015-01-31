@@ -9,8 +9,14 @@ import tempfile
 import operator
 import re
 
+_RES_DIRECTORY = os.path.join(os.path.abspath(
+    os.path.dirname(__file__)),'res')
+_USE_DIRECTORY = os.path.join(_RES_DIRECTORY,'use-3.0.6')
+
 class USEEngine(object):
-    USE_OCL_COMMAND = 'use'
+
+    USE_OCL_COMMAND = os.path.join(_USE_DIRECTORY,'bin','use')
+
     """
     Name of the use command.
     If the default value ('use') does not work, for instance if
@@ -39,7 +45,7 @@ class USEEngine(object):
     def __soilHelper(cls, name):
         return os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            '..', 'res', name)
+            'res', name)
 
 
     @classmethod
@@ -104,7 +110,7 @@ class USEEngine(object):
         if m:
             return m.group('version')
         else:
-            raise EnvironmentError('Cannot execute USE OCL or get its version')
+            raise EnvironmentError('Cannot execute USE OCL or get its version. Is this program installed?')
 
 
 
