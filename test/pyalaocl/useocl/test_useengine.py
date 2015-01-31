@@ -2,7 +2,7 @@
 
 import os.path
 
-from pyalaocl.test.useocl import TEST_CASES_DIRECTORY
+from test.pyalaocl.useocl import TEST_CASES_DIRECTORY
 from  pyalaocl.useocl.useengine import USEEngine
 
 def test_USEEngine_useVersion():

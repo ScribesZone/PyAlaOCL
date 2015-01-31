@@ -4,10 +4,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('test.'+__name__)
 
-from pyalaocl.test.useocl import TEST_CASES_DIRECTORY
+from test.pyalaocl.useocl import TEST_CASES_DIRECTORY
 
 import os
-import pyalaocl.test.useocl
 import pyalaocl.useocl.analyzer
 from nose.plugins.attrib import attr
 

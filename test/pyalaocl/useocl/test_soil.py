@@ -5,12 +5,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('test.' + __name__)
 
-import pyalaocl.test.useocl
-import pyalaocl.useocl.analyzer
-
-import os
-import sys
-
 # test_cases_dir = pyalaocl.test.useocl.
 #
 # os.path.join(
