@@ -25,10 +25,13 @@ def getLongDescription():
 
 #-- get the version ------------------------------------------------
 def getVersion():
-    version_file = read(os.path.join(name, '__init__.py'))
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
+    version_file = read('CHANGES.rst')
+    version_match = re.search(r"^:version: *([^ ]+)",
+                                  version_file, re.M)
+#    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+#                              version_file, re.M)
     if version_match:
+
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 

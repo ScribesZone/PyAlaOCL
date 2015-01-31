@@ -1,5 +1,5 @@
+:version: 0.3.5
+
 Change History
 ==============
-
-version =
 
