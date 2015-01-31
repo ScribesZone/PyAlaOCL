@@ -6,7 +6,9 @@ library.
 
 
 """
-__version__ = '0.3.4'
+
+#import setup
+#__version__ = setup.getVersion()
 
 import logging
 log = logging.getLogger(__name__)
@@ -156,9 +158,9 @@ def oclIsKindOf(value1,value2):
 
 
     :param value: A scalar value, a collection or an object.
-    :type value; Any
+    :type value: Any
     :param aType: The type to check the value against
-    (e.g. int, float, str, unicode, bool or a class)
+                  (e.g. int, float, str, unicode, bool or a class)
     :type aType: type
     :return: True if value is compatible with the type aType.
     :rtype: bool
@@ -197,9 +199,9 @@ def oclIsTypeOf(value1,value2):
     relationships. If this is what is intended, use oclIsKindOf instead.
 
     :param value: A scalar value, a collection or an object.
-    :type value; Any
+    :type value: Any
     :param aType: The type to check the value against
-    (e.g. int, float, str, unicode, bool or a class)
+                (e.g. int, float, str, unicode, bool or a class)
     :type aType: type
     :return: True if value is compatible with the type aType.
     :rtype: bool
