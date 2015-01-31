@@ -35,6 +35,7 @@ Documentation
    jinja2Integration
    jythonIntegration
    modelioIntegration
+   useoclIntegration
 
 
 Indices and tables

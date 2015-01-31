@@ -8,6 +8,10 @@ import os
 #--------------------------------------------------------------------------
 # >+JFE
 #--------------------------------------------------------------------------
+
+# Add the root to the path, necessary so that autodoc find packages
+sys.path.insert(0, os.path.abspath(os.path.join('..')))
+
 import os
 import sys
 import mock
