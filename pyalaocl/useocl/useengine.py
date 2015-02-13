@@ -1,5 +1,10 @@
 # coding=utf-8
 
+__all__ = [
+    'USEEngine',
+]
+
+
 import logging
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('test.' + __name__)
@@ -102,6 +107,7 @@ class USEEngine(object):
 
     @classmethod
     def useVersion(cls):
+        """ Try to get the version of use by executing it """
         cls.__execute(
             cls.__soilHelper('empty.use'),
             cls.__soilHelper('quit.soil'))
@@ -110,9 +116,18 @@ class USEEngine(object):
         if m:
             return m.group('version')
         else:
+            msg = "Cannot execute USE OCL or get its version.\n" \
+
             raise EnvironmentError('Cannot execute USE OCL or get its version. Is this program installed?')
 
-
+    @classmethod
+    def withUseOCL(cls):
+        try:
+            cls.useVersion()
+        except EnvironmentError:
+            return False
+        else:
+            return True
 
     @classmethod
     def analyzeUSEModel(cls, useFileName):
