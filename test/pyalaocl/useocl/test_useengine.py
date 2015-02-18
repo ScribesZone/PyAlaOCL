@@ -6,7 +6,8 @@ from test.pyalaocl.useocl import TEST_CASES_DIRECTORY
 from  pyalaocl.useocl.useengine import USEEngine
 
 def test_USEEngine_useVersion():
-    assert(USEEngine.useVersion().startswith('3.'))
+    version = USEEngine.useVersion()
+    assert(version.startswith('3.') or version.startswith('4.'))
 
 def test_USEEngine_analyzeUSEModel_KO():
     file = os.path.join(TEST_CASES_DIRECTORY,
