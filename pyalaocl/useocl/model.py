@@ -1,6 +1,10 @@
 from collections import OrderedDict
 import abc
 
+"""
+Partial AST for USE OCL Model. The elements in this module are generated
+by the "parser" module.
+"""
 
 class SourceElement(object):
     __metaclass__ = abc.ABCMeta
@@ -269,4 +273,4 @@ class ExpressionPath(object):
 
 
     def _evaluate(self, current, names):
-        pass # TODO
+        return NotImplementedError() # TODO

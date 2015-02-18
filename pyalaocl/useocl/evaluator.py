@@ -1,20 +1,9 @@
 # coding=utf-8
+"""
+Evaluate a set of USE OCL states against a given USE OCL model and store the
+evaluation results.
+"""
 
-# FIXME
-USE_OCL_COMMAND = 'use'
-
-
-# use >  check -d
-# checking structure...
-# Multiplicity constraint violation in association `ASSOC':
-#   Object `OBJECT' of class `CLASS' is connected to NUM objects of class `CLASS'
-#   at association end `END' but the multiplicity is specified as `NUM'.
-# checking invariants...
-# checking invariant (NUM) `CLASS::INVARIANT': OK.
-# checking invariant (NUM) `CLASS::INVARIANT': FAILED.
-#  -> false : Boolean
-# Instances of CLASS violating the invariant:
-#  -> Set{@bedroom201,@bedroom202, ...} : Set(Bedroom)
 
 import tempfile
 import os
@@ -35,7 +24,28 @@ from pyalaocl.useocl.evaluation \
 
 
 class UseEvaluationResults(object):
+    """
+    Evaluate a list of stateFiles against a given model and store the
+    results.
 
+    :param useOCLModel: a valid UseOCLModel build with the analyzer.
+    :type useOCLModel: analyzer.UseOCLModel
+    :param stateFiles:
+    :type stateFiles:
+    The output of USE OCL check command look like this::
+
+        use >  check -d
+        checking structure...
+        Multiplicity constraint violation in association `ASSOC':
+          Object `OBJECT' of class `CLASS' is connected to NUM objects of class `CLASS'
+          at association end `END' but the multiplicity is specified as `NUM'.
+        checking invariants...
+        checking invariant (NUM) `CLASS::INVARIANT': OK.
+        checking invariant (NUM) `CLASS::INVARIANT': FAILED.
+          -> false : Boolean
+        Instances of CLASS violating the invariant:
+          -> Set{@bedroom201,@bedroom202, ...} : Set(Bedroom)
+    """
     def __init__(self, useOCLModel, stateFiles):
         self.useOCLModel = useOCLModel
         self.modelFile = self.useOCLModel.fileName
@@ -52,7 +62,7 @@ class UseEvaluationResults(object):
             self.__parseValidationOutput(self.output_text)
 
 
-    #
+
     def __parseValidationOutput(self, text):
 
         def __splitOutputAsSectionsGroups(output_text):

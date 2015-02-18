@@ -1,4 +1,8 @@
 # coding=utf-8
+"""
+Analyze a USE OCL source file using 'info model' as a canonical representation.
+Either find some errors or create a model (see useocl.model.Model)
+"""
 
 import os
 import re
@@ -13,12 +17,22 @@ import pyalaocl.useocl.model
 
 class UseOCLModel(pyalaocl.utils.sources.SourceFile):
     def __init__(self, useModelSourceFile):
+        """
+        Analyze the given source file and returns a UseOCLModel.
+        If valid, this object contains a model, otherwise it contains the
+        list of errors as well as the USE OCL command exit code.
+        :param useModelSourceFile: The path of the '.use' source file to analyze
+        :type useModelSourceFile: str
+
+        Examples:
+            see test.pyalaocl.useocl.test_analyzer
+        """
         super(UseOCLModel, self).__init__(useModelSourceFile)
-        self.isValid = None  # Don't know yet
+        self.isValid = None         # Don't know yet
         self.canonicalLines = None  # Nothing yet
-        self.canonicalLength = 0  # Nothing yet
-        self.errors = []  # No errors yet
-        self.commandExitCode = None  # Nothing yet
+        self.canonicalLength = 0    # Nothing yet
+        self.errors = []            # No errors yet
+        self.commandExitCode = None # Nothing yet
         self.model = None  # Nothing yet, created by parse/resolve
         # Try to validate the model and fill
         #       self.isValid
@@ -34,6 +48,16 @@ class UseOCLModel(pyalaocl.utils.sources.SourceFile):
             self.__resolveModel()
 
     def saveCanonicalModelFile(self, fileName=None):
+        """
+        Save the model in the canonical form (returned by "info model")
+        in a given file.
+        :param fileName: the output file name or None. If no file name is
+            provided then the name of the source is taken but the extension
+            will be '.can.use' instead of '.use'
+        :type fileName: str
+        :return: the filename
+        :rtype: str
+        """
         if fileName is None:
             fileName = os.path.splitext(self.fileName)[0] + '.can.use'
         f = open(fileName, 'w')
