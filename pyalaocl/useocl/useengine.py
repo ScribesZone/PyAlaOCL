@@ -14,13 +14,14 @@ import tempfile
 import operator
 import re
 
-_RES_DIRECTORY = os.path.join(os.path.abspath(
-    os.path.dirname(__file__)),'res')
-_USE_DIRECTORY = os.path.join(_RES_DIRECTORY,'use-3.0.6')
+#_RES_DIRECTORY = os.path.join(os.path.abspath(
+#    os.path.dirname(__file__)),'res')
+#_USE_DIRECTORY = os.path.join(_RES_DIRECTORY,'use-3.0.6')
 
 class USEEngine(object):
 
-    USE_OCL_COMMAND = os.path.join(_USE_DIRECTORY,'bin','use')
+#    USE_OCL_COMMAND = os.path.join(_USE_DIRECTORY,'bin','use')
+    USE_OCL_COMMAND = 'use'
 
     """
     Name of the use command.
@@ -107,7 +108,8 @@ class USEEngine(object):
 
     @classmethod
     def useVersion(cls):
-        """ Try to get the version of use by executing it """
+        """ Try to get the version of use by executing it
+        """
         cls.__execute(
             cls.__soilHelper('empty.use'),
             cls.__soilHelper('quit.soil'))
