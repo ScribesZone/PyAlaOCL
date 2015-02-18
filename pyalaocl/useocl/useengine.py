@@ -184,6 +184,7 @@ class USEEngine(object):
 
         cls.__execute(
             modelFile,
-            driver_filename)
+            driver_filename,
+            errWithOut=True)
 
-        return cls.outAndErr
+        return cls.commandExitCode

@@ -15,15 +15,18 @@ def testGenerator_UseEvaluationResults():
     test_cases_dir = TEST_CASES_DIRECTORY
     soil_dir = 'soil'
     test_cases = [
-        {'model': 'Project.use',
-         'states': ['project1.soil', 'project3.soil']}
+        {'model': 'Demo.use',
+         'states': ['Demo1.soil', 'Demo2.soil', 'Demo3.soil', 'Demo4.soil']}
     ]
 
     for test_case in test_cases:
+        #-- load the model from test_cases_dir
         model_file = \
             os.path.join(test_cases_dir, test_case['model'])
         use_model = pyalaocl.useocl.analyzer.UseOCLModel(model_file)
         assert use_model.isValid   # we assume that this is ok
+
+        #-- get the state files from 'states'
         state_files = [
             os.path.join(test_cases_dir, soil_dir, soil_file)
             for soil_file in test_case['states']

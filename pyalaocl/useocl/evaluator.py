@@ -30,8 +30,8 @@ class UseEvaluationResults(object):
 
     :param useOCLModel: a valid UseOCLModel build with the analyzer.
     :type useOCLModel: analyzer.UseOCLModel
-    :param stateFiles:
-    :type stateFiles:
+    :param stateFiles: list of paths to state files (.soil)
+    :type stateFiles: [str]
     The output of USE OCL check command look like this::
 
         use >  check -d
@@ -62,6 +62,9 @@ class UseEvaluationResults(object):
             self.__parseValidationOutput(self.output_text)
 
 
+    def __repr__(self):
+        return 'UseEvaluationResults(commandExitCode=%s,modelEvaluations=%s)' % (
+            self.commandExitCode, self.modelEvaluations)
 
     def __parseValidationOutput(self, text):
 
