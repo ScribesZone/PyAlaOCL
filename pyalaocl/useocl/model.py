@@ -129,7 +129,6 @@ class Enumeration(TopLevelElement,SimpleType):
 
 
 
-
 class Class(TopLevelElement):
     def __init__(self, name, model, isAbstract=False, superclasses=()):
         super(Class, self).__init__(name, model)
@@ -211,7 +210,7 @@ class Invariant(TopLevelElement):
 
 
     def __str__(self):
-        return self.name
+        return '%s::%s' % (self.class_.name, self.name)
 
 
 
@@ -246,7 +245,8 @@ class Role(SourceElement):
         self.expression = expression
         self.opposite = None   # set for binary association only
 
-
+    def __str__(self):
+        return '%s::%s' % (self.association.name, self.name)
 
 class AssociationClass(Class,Association):
     def __init__(self, name, model, isAbstract=False, superclasses=()):
