@@ -42,6 +42,7 @@ class InvariantEvaluation(object):
         self.modelEvaluation = modelEvaluation
         self.invariant = invariant
         self.modelEvaluation.invariantEvaluations[invariant] = self
+        self.isOK = None # set in subclasses. A bool.
 
 
 class ModelValidation(ModelEvaluation):
@@ -73,6 +74,7 @@ class InvariantValidation(InvariantEvaluation):
 
     def __init__(self, modelEvaluation, invariant):
         InvariantEvaluation.__init__(self, modelEvaluation, invariant)
+        self.isOK = True
 
 
     def __repr__(self):
@@ -116,6 +118,7 @@ class InvariantViolation(InvariantEvaluation):
     def __init__(self, modelViolation, invariant, violatingObjects):
         InvariantEvaluation.__init__(self, modelViolation, invariant)
         self.violatingObjects = violatingObjects
+        self.isOK = False
 
 
     def __repr__(self):
