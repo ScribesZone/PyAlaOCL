@@ -1,7 +1,7 @@
 -- @assert Department::MoreEmployeesThanProjects OK
 -- @assert Employee::MoreProjectsHigherSalary OK
 -- @assert Project::BudgetWithinDepartmentBudget KO
--- @assert Project::EmployeesInControllingDepartment KO
+-- @assert Project::EmployeesInControllingDepartment OK # MUST FAIL
 
 -- model: Demo.use
 --
