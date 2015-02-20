@@ -1,7 +1,9 @@
 # coding=utf-8
 """
 Evaluate a set of USE OCL states against a given USE OCL model and store the
-evaluation results.
+evaluation result. This evaluation result is basically a map yielding for
+each state file the corresponding ModelEvaluation (either ModelValidation or
+ModelFailure indeed).
 """
 
 
@@ -18,21 +20,19 @@ from pyalaocl.useocl.useengine import USEEngine
 
 
 import pyalaocl.useocl.evaluation
-from pyalaocl.useocl.evaluation \
+from evaluation \
     import ModelValidation, ModelViolation, InvariantViolation, \
+    InvariantValidation, \
     CardinalityViolation
 
 
 class UseEvaluationResults(object):
     """
-    Evaluate a list of stateFiles against a given model and store the
-    results.
+    Results of the evaluation of a list of state file against a given model.
 
-    :param useOCLModel: a valid UseOCLModel build with the analyzer.
-    :type useOCLModel: analyzer.UseOCLModel
-    :param stateFiles: list of paths to state files (.soil)
-    :type stateFiles: [str]
-    The output of USE OCL check command look like this::
+    The output of USE OCL check command look like following and this class
+    basically represented this information in a structure way for the
+    different state files::
 
         use >  check -d
         checking structure...
@@ -47,24 +47,40 @@ class UseEvaluationResults(object):
           -> Set{@bedroom201,@bedroom202, ...} : Set(Bedroom)
     """
     def __init__(self, useOCLModel, stateFiles):
-        self.useOCLModel = useOCLModel
-        self.modelFile = self.useOCLModel.fileName
-        self.stateFiles = stateFiles
+        """
+        Evaluate a list of stateFiles against a given model and store the
+        use_evaluation_result results.
+        :param useOCLModel: a valid UseOCLModel build with the analyzer.
+        :type useOCLModel: analyzer.UseOCLModel
+        :param stateFiles: list of paths to state files (.soil)
+        :type stateFiles: [str]
 
-        self.modelEvaluations = []
+        """
+        self.useOCLModel = useOCLModel
+
+        self.modelFile = self.useOCLModel.fileName
+        """ [str] """
+
+        self.stateFiles = stateFiles
+        """ [str] """
+
+        self.modelEvaluationMap = OrderedDict()
+        """ dict(str,ModelEvaluation) """
+
         self.commandExitCode = \
             USEEngine.evaluateSoilFilesWithUSEModel(
                 self.modelFile,
                 self.stateFiles)
-        self.isValid = (self.commandExitCode == 0)
-        if self.isValid:
+        self.wasExecutionValid = (self.commandExitCode == 0)
+
+        if self.wasExecutionValid:
             self.output_text = USEEngine.outAndErr
             self.__parseValidationOutput(self.output_text)
 
 
     def __repr__(self):
         return 'UseEvaluationResults(commandExitCode=%s,modelEvaluations=%s)' % (
-            self.commandExitCode, self.modelEvaluations)
+            self.commandExitCode, self.modelEvaluationMap)
 
     def __parseValidationOutput(self, text):
 
@@ -77,7 +93,7 @@ class UseEvaluationResults(object):
             :return: A list of groups, each group with 3 sections.
             :rtype: [{'stateSection':str,
                       'checkingStructureSection':str,
-                      '': str}]
+                      'checkingInvariantsSection': str}]
             """
             # Note the use of .*? for non-greedy matches.
             r = '^[^\n]+\.soil> open [^\n]*\.soil$' \
@@ -116,7 +132,7 @@ class UseEvaluationResults(object):
                 _.append(m.groupdict())
             return _
 
-        def __buildCardinalityViolation(info, model, state, modelViolation):
+        def __buildCardinalityViolation(info, model, modelViolation):
             role = model.findRole(info['association'] ,info['role'])
             violatingObject = None # FIXME
             cardinalityFound = int(info['numberOfObjects'])
@@ -151,7 +167,11 @@ class UseEvaluationResults(object):
             return (oks,kos)
 
 
-        def __buildInvariantViolation(info, model, state, modelViolation):
+        def __buildInvariantValidation(info, model, modelEvaluation):
+            invariant = model.findInvariant(info['class'], info['invariant'])
+            InvariantValidation(modelEvaluation, invariant)
+
+        def __buildInvariantViolation(info, model, modelViolation):
             invariant = model.findInvariant(info['class'],info['invariant'])
             for objectName in info['objects']:
                 pass #FIXME
@@ -160,19 +180,17 @@ class UseEvaluationResults(object):
 
 
         sections_groups = __splitOutputAsSectionsGroups(text)
-        for state_sections in sections_groups:
+        for (state_index, state_sections) in enumerate(sections_groups):
+            state_file = self.stateFiles[state_index]
             state_text = state_sections['stateSection']
             structure_text = state_sections['checkingStructureSection']
             invariant_text = state_sections['checkingInvariantsSection']
 
-            state = None  # FIXME
-
             # parse the evaluation part
             structure_violations = \
                 __parseCheckingStructureSection(structure_text)
-            (_, invariant_violations) = \
+            (invariant_validations, invariant_violations) = \
                 __parseCheckingInvariantsSection(invariant_text)
-
             # check if there is some errors
             model_validated = (
                 len(structure_violations)==0
@@ -180,18 +198,21 @@ class UseEvaluationResults(object):
             model = self.useOCLModel.model
 
             if model_validated:
-                model_evaluation = ModelValidation(model, state)
+                model_evaluation = ModelValidation(model, state_file)
+
             else:
                 # there are some violations.
-                model_evaluation = ModelViolation(model, state)
+                model_evaluation = ModelViolation(model, state_file)
 
                 for info in structure_violations:
-                    __buildCardinalityViolation(info, model, state,
+                    __buildCardinalityViolation(info, model,
                                                 model_evaluation)
 
                 for info in invariant_violations:
-                    __buildInvariantViolation(info, model, state,
+                    __buildInvariantViolation(info, model,
                                               model_evaluation)
-            self.modelEvaluations.append(model_evaluation)
+            for info in invariant_validations:
+                __buildInvariantValidation(info, model, model_evaluation)
+            self.modelEvaluationMap[state_file] = model_evaluation
 
 
