@@ -119,6 +119,9 @@ class BasicType(SimpleType):
     def __init__(self, name):
         self.name = name
 
+    def __repr__(self):
+        return self.name
+
 
 
 class Enumeration(TopLevelElement,SimpleType):
@@ -126,6 +129,9 @@ class Enumeration(TopLevelElement,SimpleType):
         super(Enumeration, self).__init__(name, model, code)
         self.model.enumerations[name] = self
         self.literals = literals
+
+    def __repr__(self):
+        return '%s(%s)' % (self.name,repr(self.literals))
 
 
 
@@ -211,6 +217,9 @@ class Invariant(TopLevelElement):
 
     def __str__(self):
         return '%s::%s' % (self.class_.name, self.name)
+
+    def __repr__(self):
+        return 'INV(%s::%s)' % (self.class_.name, self.name)
 
 
 
