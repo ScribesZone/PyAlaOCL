@@ -5,20 +5,43 @@ Result of the evaluation of a USE OCL state against a USE OCL model.
 """
 
 from collections import OrderedDict
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
+import os.path
 
 class ModelEvaluation(object):
-    __metaclass__ = ABCMeta
     """
     Result of the evaluation of a USE OCL state against a USE OCL model.
     This could either be a ModelValidation if the state is valid,
     or a ModelViolation otherwise.
     """
-    def __init__(self, model, state):
+    __metaclass__ = ABCMeta
+
+
+    def __init__(self, model, state = None):
         self.model = model
         self.state = state
+        """ str """
+        self.stateShortName = os.path.splitext(os.path.basename(self.state))[0]
         self.isValidated = None  # abstract attribute. Filled by subclasses.
 
+        self.invariantEvaluations = OrderedDict()
+        """ dict(Invariant, InvariantEvaluation) """
+
+
+    def getInvariantEvaluation(self,
+                               classOrAssociationClassName, invariantName):
+        inv = self.model.findInvariant(
+                classOrAssociationClassName, invariantName )
+        return self.invariantEvaluations[inv]
+
+
+class InvariantEvaluation(object):
+    __metaclass__ = ABCMeta
+
+    def __init__(self, modelEvaluation, invariant):
+        self.modelEvaluation = modelEvaluation
+        self.invariant = invariant
+        self.modelEvaluation.invariantEvaluations[invariant] = self
 
 
 class ModelValidation(ModelEvaluation):
@@ -34,6 +57,27 @@ class ModelValidation(ModelEvaluation):
     def __str__(self):
         return 'Model validated'
 
+    def __repr__(self):
+        return 'Valid(%s)' % self.stateShortName
+
+
+
+class InvariantValidation(InvariantEvaluation):
+    """
+    Invariant validation.
+
+    Looks like this in USE OCL::
+
+        checking invariant (NUM) `CLASS::INVARIANT': OK.
+    """
+
+    def __init__(self, modelEvaluation, invariant):
+        InvariantEvaluation.__init__(self, modelEvaluation, invariant)
+
+
+    def __repr__(self):
+        return '%s=OK'% self.invariant.name
+
 
 
 class ModelViolation(ModelEvaluation):
@@ -41,28 +85,24 @@ class ModelViolation(ModelEvaluation):
     Result of the negative evaluation of a USE OCL state agains a USE OCL
     model. Store invariants violations and/or cardinality violations.
     """
+
     def __init__(self, model, state):
         ModelEvaluation.__init__(self, model, state)
         self.isValidated = True
-
-        self.invariantViolations = OrderedDict()
-        """ dict(Invariant, InvariantViolation) """
 
         self.cardinalityViolations = OrderedDict()
         """ dict(Role, [CardinalityViolation] ) """
 
 
-    def __str__(self):
-        _ = 'Model not validated.'
-        if len(self.invariantViolations) != 0:
-            _ += ' %s invariant violated.' % len(self.invariantViolations)
-        if len(self.cardinalityViolations) != 0:
-            _ += ' %s cardinality violations' % len(self.cardinalityViolations)
-        return _
+    def __repr__(self):
+        return 'Violation(%s,INV(%s),ROLE(%s))' % (
+            self.stateShortName,
+            ','.join(map(str,self.invariantEvaluations.values())),
+            ','.join(map(str,self.cardinalityViolations.keys())))
 
 
 
-class InvariantViolation(object):
+class InvariantViolation(InvariantEvaluation):
     """
     Invariant violation.
 
@@ -74,12 +114,12 @@ class InvariantViolation(object):
           -> Set{@bedroom201,@bedroom202, ...} : Set(Bedroom)
     """
     def __init__(self, modelViolation, invariant, violatingObjects):
-        self.modelViolation = modelViolation
-        modelViolation.invariantViolations[invariant] = self
-
-        self.invariant = invariant
+        InvariantEvaluation.__init__(self, modelViolation, invariant)
         self.violatingObjects = violatingObjects
 
+
+    def __repr__(self):
+        return '%s=KO' % self.invariant.name
 
 
 class CardinalityViolation(object):
