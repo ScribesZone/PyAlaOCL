@@ -16,7 +16,10 @@ def testGenerator_UseEvaluationResults():
     soil_dir = 'soil'
     test_cases = [
         {'model': 'Demo.use',
-         'states': ['Demo1.soil', 'Demo2.soil', 'Demo3.soil', 'Demo4.soil']}
+         'states': ['Demo1.soil', 'Demo2.soil', 'Demo3.soil', 'Demo4.soil'],
+         'wasExecutionValid':True,
+         'evaluationsRepr':"""[Violation(Demo1,INV(MoreEmployeesThanProjects=OK,MoreProjectsHigherSalary=OK,BudgetWithinDepartmentBudget=OK,EmployeesInControllingDepartment=OK),ROLE(WorksIn::department)), Violation(Demo2,INV(MoreEmployeesThanProjects=OK,MoreProjectsHigherSalary=OK,BudgetWithinDepartmentBudget=OK,EmployeesInControllingDepartment=OK),ROLE(WorksIn::department)), Violation(Demo3,INV(BudgetWithinDepartmentBudget=KO,EmployeesInControllingDepartment=KO,MoreEmployeesThanProjects=OK,MoreProjectsHigherSalary=OK),ROLE(Controls::department)), Valid(Demo4)]"""
+         }
     ]
 
     for test_case in test_cases:
@@ -31,12 +34,18 @@ def testGenerator_UseEvaluationResults():
             os.path.join(test_cases_dir, soil_dir, soil_file)
             for soil_file in test_case['states']
         ]
-        check_UseEvaluationResults.description = str(test_case)
-        yield check_UseEvaluationResults, use_model, state_files
+        name = test_case['model']
+        check_UseEvaluationResults.description = name
+        yield check_UseEvaluationResults, use_model, state_files, test_case
 
 
-def check_UseEvaluationResults(useModel,stateFiles):
-    validation_result = \
-        pyalaocl.useocl.evaluator.UseEvaluationResults(useModel, stateFiles)
-    print validation_result
-    assert validation_result
+def check_UseEvaluationResults(useModel, stateFiles, testCase):
+    _ =  pyalaocl.useocl.evaluator.UseEvaluationResults(useModel, stateFiles)
+    assert len(_.modelEvaluationMap) == len(stateFiles)
+    assert _.wasExecutionValid == testCase['wasExecutionValid']
+    # uncommend this line to see the details of the evaluations
+    # print _
+    #
+    # print repr(_.modelEvaluationMap.values())
+    # print testCase['evaluationsRepr']
+    assert repr(_.modelEvaluationMap.values()) == testCase['evaluationsRepr']
