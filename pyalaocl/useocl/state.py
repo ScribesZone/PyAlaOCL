@@ -1,5 +1,14 @@
 # coding=utf-8
 
+"""
+Simple metamodel for object states. Contains definitions for:
+
+- State,
+- Object,
+- Link,
+- LinkObject.
+"""
+
 from collections import OrderedDict
 
 class State(object):
