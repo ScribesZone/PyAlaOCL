@@ -1,4 +1,12 @@
+# coding=utf-8
+
+"""
+Simple converter from  canonical USE OCL expression to pyalaocl expression.
+This is currenrly mostly a draft. The conversion is fully tested.
+"""
+
 import re
+
 
 class UseOCLConverter(object):
     useCommand = 'use'
