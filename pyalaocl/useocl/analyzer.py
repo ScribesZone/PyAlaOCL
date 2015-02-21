@@ -1,4 +1,5 @@
 # coding=utf-8
+
 """
 Analyze a USE OCL source file using 'info model' as a canonical representation.
 Either find some errors or create a model (see useocl.model.Model)
