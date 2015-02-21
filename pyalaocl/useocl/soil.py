@@ -1,5 +1,9 @@
 # coding=utf-8
 
+"""
+Interpreter of soil specifications. Not fully implemented.
+"""
+
 import os
 import re
 from collections import OrderedDict
