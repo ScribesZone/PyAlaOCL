@@ -1,10 +1,12 @@
-from collections import OrderedDict
-import abc
+# coding=utf-8
 
 """
 Partial AST for USE OCL Model. The elements in this module are generated
 by the "parser" module.
 """
+
+from collections import OrderedDict
+import abc
 
 class SourceElement(object):
     __metaclass__ = abc.ABCMeta
