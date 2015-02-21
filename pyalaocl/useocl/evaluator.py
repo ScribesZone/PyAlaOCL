@@ -6,11 +6,17 @@ each state file the corresponding ModelEvaluation (either ModelValidation or
 ModelFailure indeed).
 """
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger('test.' + __name__)
 
 import tempfile
 import os
 import re
 from collections import OrderedDict
+
+import pyalaocl.useocl.soil
 
 import pyalaocl.useocl.analyzer
 from pyalaocl.useocl.analyzer import UseOCLModel
@@ -46,7 +52,7 @@ class UseEvaluationResults(object):
         Instances of CLASS violating the invariant:
           -> Set{@bedroom201,@bedroom202, ...} : Set(Bedroom)
     """
-    def __init__(self, useOCLModel, stateFiles):
+    def __init__(self, useOCLModel, soilFiles):
         """
         Evaluate a list of stateFiles against a given model and store the
         use_evaluation_result results.
@@ -56,13 +62,19 @@ class UseEvaluationResults(object):
         :type stateFiles: [str]
 
         """
+        log.info('UseEvaluationResults.__init__(%s)', str(len(soilFiles)))
         self.useOCLModel = useOCLModel
 
         self.modelFile = self.useOCLModel.fileName
         """ [str] """
 
-        self.stateFiles = stateFiles
+        self.emptyStateFiles = []   # computed by __filterNonEmptyStateFiles
         """ [str] """
+
+        self.stateFiles = []        # computed by __filterNonEmptyStateFiles
+        """ [str] """
+
+        self.__filterNonEmptyStateFiles(soilFiles)
 
         self.modelEvaluationMap = OrderedDict()
         """ dict(str,ModelEvaluation) """
@@ -79,8 +91,21 @@ class UseEvaluationResults(object):
 
 
     def __repr__(self):
-        return 'UseEvaluationResults(commandExitCode=%s,modelEvaluations=%s)' % (
-            self.commandExitCode, self.modelEvaluationMap)
+        return ('UseEvaluationResults(commandExitCode=%s,modelEvaluations=%s)'
+                % ( self.commandExitCode, self.modelEvaluationMap) )
+
+    def __filterNonEmptyStateFiles(self, files):
+        """
+        Empty soil file should be removed because of a BUG in
+        :return:
+        :rtype:
+        """
+        for file in files:
+            if pyalaocl.useocl.soil.isNonEmptySoilFile(file):
+                self.stateFiles.append(file)
+            else:
+                self.emptyStateFiles.append(file)
+
 
     def __parseValidationOutput(self, text):
 
