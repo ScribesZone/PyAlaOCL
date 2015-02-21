@@ -1,5 +1,9 @@
 # coding=utf-8
 
+"""
+Wrapper to the USE engine. Call the 'use' command.
+"""
+
 __all__ = [
     'USEEngine',
 ]
