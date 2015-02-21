@@ -87,7 +87,9 @@ def testGenerator_UseEvaluationAndAssertionResults():
             """[Assert(Department::MoreEmployeesThanProjects=True,OK), Assert(Employee::MoreProjectsHigherSalary=True,OK), Assert(Project::BudgetWithinDepartmentBudget=False,OK), Assert(Project::EmployeesInControllingDepartment=True,KO)]
 """,
             """[Assert(Department::MoreEmployeesThanProjects=True,OK), Assert(Employee::MoreProjectsHigherSalary=True,OK), Assert(Project::BudgetWithinDepartmentBudget=True,OK), Assert(Project::EmployeesInControllingDepartment=True,OK)]
-""",    ]
+""",    ],
+         'failures': """[Assert(Project::BudgetWithinDepartmentBudget=False,KO), Assert(Project::EmployeesInControllingDepartment=False,KO), Assert(Project::EmployeesInControllingDepartment=True,KO)]"""
+
       }
     ]
 
@@ -105,10 +107,15 @@ def check_UseEvaluationAndAssertionResults(testCase):
     r = pyalaocl.useocl.tester.UseEvaluationAndAssertionResults(
         useOCLModel, stateFiles)
 
-    assert (r.assertionEvaluationsMap).keys() == stateFiles
-    #assert repr(r.assertionEvaluationsMap.values()) == testCase['assert']
+    assert (r.assertionEvaluationsByStateFile).keys() == stateFiles
+    #assert repr(r.assertionEvaluationsByStateFile[stateFile]) == testCase['assert']
     # print r.assertionEvaluationsMap.values()
     for i, stateFile in enumerate(stateFiles):
         # print r.assertionEvaluationsMap[stateFile].values()
-        assert repr(r.assertionEvaluationsMap[stateFile].values()
+        assert repr(r.assertionEvaluationsByStateFile[stateFile]
                     == testCase['asserts'][i])
+
+    assert repr(r.assertionViolations) == testCase['failures']
+    assert r.nbOfAssertionViolations == 3
+    assert r.hasViolatedAssertions == True
+    assert r.nbOfAssertionEvaluations == 16

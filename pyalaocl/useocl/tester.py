@@ -19,7 +19,6 @@ import pyalaocl.useocl.evaluator
 
 
 
-
 class UseEvaluationAndAssertionResults(
             pyalaocl.useocl.evaluator.UseEvaluationResults):
     """
@@ -33,24 +32,48 @@ class UseEvaluationAndAssertionResults(
             self, useOCLModel, stateFiles
         )
 
-        # TODO add here the list of all defined variables including None
-        self.assertionEvaluationsMap = OrderedDict()
-        """ dict(str,dict(Invariant,InvariantAssertionEvaluation)) """
+        self.assertionEvaluationsByStateFile = OrderedDict()
+        """ dict(str,[InvariantAssertionEvaluation]) """
+
+        self.assertionViolations = []
+        """ [InvariantAssertionEvaluation] """
+
 
         if self.wasExecutionValid:
             for state_file in self.stateFiles:
                 self.__evaluateAssertionsForState(state_file)
 
+        self.__buildSummmary()
+
+        self.nbOfAssertionViolations = len(self.assertionViolations)
+        self.hasViolatedAssertions = self.nbOfAssertionViolations > 0
+        self.nbOfAssertionEvaluations = \
+            sum(map(len,self.assertionEvaluationsByStateFile.values()))
 
     def __evaluateAssertionsForState(self, stateFile):
-        self.assertionEvaluationsMap[stateFile] = OrderedDict()
+        """
+        Set assertionEvaluationsMap[stateFile} for the given file
+        :param stateFile: the state file to process
+        :type stateFile: str
+        """
+        self.assertionEvaluationsByStateFile[stateFile] = []
         model = self.useOCLModel.model
         for assertion in _extractAssertionsFromFile(model, stateFile):
             inv = assertion.invariant
             modelEvaluation = self.modelEvaluationMap[stateFile]
             invEvaluation = modelEvaluation.invariantEvaluations[inv]
             ae = InvariantAssertionEvaluation(assertion, invEvaluation. isOK)
-            self.assertionEvaluationsMap[stateFile][inv] = ae
+            self.assertionEvaluationsByStateFile[stateFile].append(ae)
+
+
+    def __buildSummmary(self):
+        self.assertionViolations = [
+            ae
+                for aes in self.assertionEvaluationsByStateFile.values()
+                for ae in aes
+                if not ae.isOK
+        ]
+
 
 
 class InvariantAssertionEvaluation(object):
@@ -71,7 +94,8 @@ class InvariantAssertionEvaluation(object):
 
 
 class InvariantAssertion(object):
-    def __init__(self, invariant, expectedResult):
+    def __init__(self, stateFile, invariant, expectedResult):
+        self.stateFile = stateFile
         self.invariant = invariant
         """ pyalaocl.useocl.model.Invariant """
 
@@ -103,7 +127,7 @@ def _extractAssertionsFromFile(useModel, soilFile):
             raise Exception('error with assertion in %s: %s::%s not found' %
                             (soilFile, class_name, inv_name))
         else:
-            _.append(InvariantAssertion(inv,result))
+            _.append(InvariantAssertion(soilFile, inv,result))
     return _
 
 
