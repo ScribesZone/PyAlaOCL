@@ -13,6 +13,15 @@ import pyalaocl.useocl.analyzer as analyser
 import pyalaocl.useocl.state
 from pyalaocl.useocl.state import State, Object, Link, LinkObject
 
+
+
+def isNonEmptySoilFile(file):
+    with open(file) as f:
+        content = f.read()
+    match = re.search(r'(^ *!)|(^ *open)', content, re.MULTILINE)
+    return match is not None
+
+
 class UseSoilSpecification(object):
     def __init__(self, useSoilFile):
         if not os.path.isfile(useSoilFile):
