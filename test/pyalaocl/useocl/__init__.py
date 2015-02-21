@@ -4,17 +4,19 @@ import os
 TEST_CASES_DIRECTORY = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), 'testcases')
 
-TEST_SOIL_DIRECTORY = os.path.join(TEST_CASES_DIRECTORY, 'soil')
+# TEST_SOIL_DIRECTORY = os.path.join(TEST_CASES_DIRECTORY, 'soil')
 
 def getUseFile(name):
     return os.path.join(TEST_CASES_DIRECTORY, name)
 
 def getSoilFile(name):
-    return os.path.join(TEST_SOIL_DIRECTORY, name)
+    return os.path.join(TEST_CASES_DIRECTORY, 'soil', name)
+
+def getZipFile(name):
+    return os.path.join(TEST_CASES_DIRECTORY, 'zip', name)
 
 def setup():
     pass
-
 
 def teardown():
     pass
