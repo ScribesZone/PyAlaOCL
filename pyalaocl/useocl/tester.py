@@ -4,17 +4,17 @@
 Support for testing USE OCL specifications.
 """
 
-import re
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger('test.' + __name__)
+
 from collections import OrderedDict
 
 import pyalaocl.useocl.model
+import pyalaocl.useocl.analyzer
 import pyalaocl.useocl.evaluator
-
-
-
-
-
-
+import pyalaocl.useocl.assertion
 
 
 
@@ -58,11 +58,13 @@ class UseEvaluationAndAssertionResults(
         """
         self.assertionEvaluationsByStateFile[stateFile] = []
         model = self.useOCLModel.model
-        for assertion in _extractAssertionsFromFile(model, stateFile):
+        for assertion in pyalaocl.useocl.assertion._extractAssertionsFromFile(
+                model, stateFile):
             inv = assertion.invariant
             modelEvaluation = self.modelEvaluationMap[stateFile]
             invEvaluation = modelEvaluation.invariantEvaluations[inv]
-            ae = InvariantAssertionEvaluation(assertion, invEvaluation. isOK)
+            ae = pyalaocl.useocl.assertion.InvariantAssertionEvaluation(
+                assertion, invEvaluation. isOK)
             self.assertionEvaluationsByStateFile[stateFile].append(ae)
 
 
@@ -75,80 +77,194 @@ class UseEvaluationAndAssertionResults(
         ]
 
 
+class TestSuite(UseEvaluationAndAssertionResults):
+    __test__ = False   # To avoid being taken as a test by nose
 
-class InvariantAssertionEvaluation(object):
+    def __init__(self, useFile, stateFiles, testId=None):
+        self.testId = testId
+        self.useFile = useFile
+        use_ocl_model = pyalaocl.useocl.analyzer.UseOCLModel(useFile)
+        UseEvaluationAndAssertionResults.__init__(self, use_ocl_model,
+                                                  stateFiles)
 
-
-    def __init__(self, invariantAssertion, actualResult):
-        self.assertion = invariantAssertion
-
-        self.actualResult = actualResult
-        self.isOK = actualResult == self.assertion.expectedResult
-
-    def __repr__(self):
-        return 'Assert(%s=%s,%s)' % (
-            self.assertion.invariant,
-            self.assertion.expectedResult,
-            "OK" if self.isOK else "KO"
-        )
-
-
-class InvariantAssertion(object):
-    def __init__(self, stateFile, invariant, expectedResult):
-        self.stateFile = stateFile
-        self.invariant = invariant
-        """ pyalaocl.useocl.model.Invariant """
-
-        self.expectedResult = expectedResult
-        """ bool """
-
-    def __repr__(self):
-        return 'Assert(%s,%s)' %(self.invariant,self.expectedResult)
+import zipfile
+import os.path
+import tempfile
+import urllib
+import shutil
 
 
-def _extractAssertionsFromFile(useModel, soilFile):
-    """
-    Extract assertions objects from a soil file and a given model.
-    :param useModel: the  model to which the soil file may reference
-    :type useModel: pyalaocl.useocl.model.Model
-    :param soilFile: path to the soil file
-    :type soilFile: str
-    :return: list of InvariantAssertion
-    :rtype: [pyalaocl.useocl.model.Invariant]
+class ZipTestSuite(TestSuite):
+    __test__ = False  # To avoid being taken as a test by nose
 
-    """
-    _ = []
-    triples = _extractAssertionStringsFromFile(soilFile)
-    for (class_name, inv_name, result) in triples:
-        try:
-            # TODO: improve to support None as class name
-            inv = useModel.findInvariant(class_name, inv_name)
-        except:
-            raise Exception('error with assertion in %s: %s::%s not found' %
-                            (soilFile, class_name, inv_name))
+    def __init__(self, zipFileId, testId=None,
+                 targetDirectory = None, extractOnly=('.soil', '.use')):
+        self.zipFileId = zipFileId
+        self.targetDirectory = targetDirectory
+        self.extractOnly = extractOnly
+        self.isZipRemote = None                # computed in _computeZipFile
+        self.zipFile = None                    # computed in _computeZipFile
+        self.directory = None                  # Computed in __extractZipFile
+        self.entries = []                      # Computed in __extractZipFile
+        self.filesByExtension = {}             # Computed in __extractZipFile
+        self._computeZipFile()
+        self.__extractZipFile()
+        self._checkZipTestSuite()
+        TestSuite.__init__(
+            self,
+            useFile = self._computeUseFile(),
+            stateFiles = self._computeStateFiles(),
+            testId = self._computeTestId(testId))
+
+    def free(self, targetDirectoryToBeRemoved=None):
+        """
+        Free temporary resources if any.
+        If a targetDirectory is specified as a parameter, check if this was
+        the same directory given when the ZipTestSuite was created and if
+        this is so, remove this whole directory.
+        """
+        if self.isZipRemote:
+            log.info('Removing temporary local zip file: %s', self.zipFile)
+            os.remove(self.zipFile)
+        if self.targetDirectory is None:
+            log.info(
+                'Removing temporary directory %s (used to extract zip file)'
+                % self.directory)
+            shutil.rmtree(self.directory)
         else:
-            _.append(InvariantAssertion(soilFile, inv,result))
-    return _
+            if targetDirectoryToBeRemoved == self.targetDirectory:
+                log.info('Removing target directory as requested: %s'
+                         % targetDirectoryToBeRemoved)
+                shutil.rmtree(targetDirectoryToBeRemoved)
+            else:
+                raise Exception(
+                    'ERROR: trying to free %s while %s was created. No removal'
+                    % (targetDirectoryToBeRemoved, self.targetDirectory))
 
 
-def _extractAssertionStringsFromFile(soilFile):
-    """
-    Extract the assertion statement from a soil file.
-    Returns a list of triplet with
-    - the class name (optional),
-    - the short name of invariant,
-    - the expected result as a boolean
-    """
-    def _asBoolean(s):
-        return {'ok':True, 'ko':False,'failed':False}[s.lower()]
+    def _computeZipFile(self):
+        """
+        Compute self.zipFile from zipFileId
+        :param zipFileId: a path to a local zip file or url to remote zipfile
+        :type zipFileId: str
+        """
+        protocols = ['http', 'https', 'ftp', 'ftps']
+        self.isZipRemote = any(
+            self.zipFileId.startswith(p + '://') for p in protocols)
+        if self.isZipRemote:
+            (_, file) = tempfile.mkstemp(suffix='.zip')
+            self.zipFile = file
+            log.info('Downloading zip file from %s into %s'
+                % (self.zipFileId, self.zipFile))
+            urllib.urlretrieve(self.zipFileId, self.zipFile)
+        else:
+            self.zipFile = self.zipFileId
 
-    with open(soilFile) as f:
-        text = f.read()
-    regexp = r'--\ *@\s*(?:assert|validate)\s+' \
-             r'(?:(\w+)[:_][:_])?(\w+)\s+' \
-             r'(OK|KO|Failed)'
-    triples = re.findall( regexp, text, re.IGNORECASE)
-    return [(class_,inv,_asBoolean(result)) for (class_,inv,result) in triples]
+
+    def _computeTestId(self, testId=None):
+        """
+        Compute the testId of the test. This function could be overridden
+        if necessary.
+        :param testId: The testId or none given as a parameter of the test
+            constructor
+        :type testId: str
+        :return: The computed testId possibily based on the name or content
+            of the archive.
+        :rtype: str
+        """
+        return testId
+
+
+    def _computeUseFile(self):
+        print '----', self.filesByExtension
+        use_files = self.filesByExtension['.use']
+        if len(use_files) == 1:
+            return use_files[0]
+        else:
+            raise Exception('More than one .use file: %s'  % use_files )
+
+
+    def _computeStateFiles(self):
+        """
+        Select the state files form all the soil files in the archives.
+        This function could be overriden.
+        :return: a list of soil file that will serve as the state files
+        :rtype: [str]
+        """
+        return self.filesByExtension['.soil']
+
+    def _computeSelectEntry(self, file):
+        """
+        Indicate if the zip entry
+        :param file: the name of the zip entryu
+        :type file: str
+        :return: return True if the entry must be selected
+        :rtype: book
+        """
+        extension = os.path.splitext(file)[1]
+        return (
+            self.extractOnly is None
+            or (self.extractOnly is not None
+                and extension in self.extractOnly))
+
+    def _checkZipTestSuite(self):
+        pass
+
+
+    def __extractZipFile(self):
+        # compute target_directory
+        if self.targetDirectory is None:
+            self.directory = tempfile.mkdtemp(prefix='zipTestSuite_')
+        else:
+            if os.path.isdir(self.targetDirectory):
+                raise IOError('ERROR: %s is not a directory'
+                              % self.targetDirectory)
+            self.directory = self.targetDirectory
+        if not zipfile.is_zipfile(self.zipFile):
+            raise IOError('ERROR: %s is not a zip file' % self.zipFile)
+
+        log.info('Extracting files from %s' % self.zipFile)
+
+        with zipfile.ZipFile(self.zipFile, 'r') as z:
+            if z.testzip() != None:
+                raise IOError('ERROR: %s contains bad files' % self.zipFile)
+            for entry in z.namelist():
+                if os.path.isabs(entry):
+                    raise IOError(
+                        'ERROR: %s contains absolute files' % self.zipFile)
+                log.info('Extracting files from %s' % self.zipFile)
+                if self._computeSelectEntry(entry):
+                    log.info('  Extracting entry %s' % entry)
+                    self.__extractZipEntry(z,entry)
+                else:
+                    log.info('  Skipping file %s' % entry)
+
+    def __extractZipEntry(self, zipHandle, entry):
+        zipHandle.extract(entry, self.directory)
+        expected = os.path.normpath(os.path.join(self.directory, entry))
+        if not os.path.exists(expected):
+            raise IOError(
+                'Cannot extract %s from %s keeping this name'
+                % (entry, self.zipFileId))
+        self.entries.append(expected)
+        extension = os.path.splitext(entry)[1]
+        if os.path.isfile(expected):
+            if extension not in self.filesByExtension:
+                self.filesByExtension[extension] = []
+            self.filesByExtension[extension].append(expected)
+        return expected
+
+class CrossTestSuite(object):
+    __test__ = False  # To avoid being taken as a test by nose
+    pass
+
+
+
+
+
+
+
+
 
 
 

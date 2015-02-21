@@ -4,7 +4,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('test.' + __name__)
 
-from test.pyalaocl.useocl import getSoilFile, getUseFile
+from test.pyalaocl.useocl import getSoilFile, getUseFile, getZipFile
 
 import os
 import pyalaocl.useocl.tester
@@ -60,3 +60,36 @@ def check_UseEvaluationAndAssertionResults(testCase):
     assert r.nbOfAssertionViolations == 3
     assert r.hasViolatedAssertions == True
     assert r.nbOfAssertionEvaluations == 16
+
+
+
+
+
+def testGenerator_ZipTestSuite():
+    test_cases = [
+        {'zip': 'Demo-G007.zip',
+         'use': 1,
+         'soil': 4,
+         'violations': 3,
+         'evaluation': 16,
+        }
+    ]
+
+    for test_case in test_cases:
+        test_name = test_case['zip']
+        check_ZipTestSuite.description = test_name
+        yield check_ZipTestSuite, test_case
+
+
+def check_ZipTestSuite(case):
+    # get the model parsed
+    if case['zip'].startswith('http://'):
+        zipFileId = case['zip']
+    else:
+        zipFileId = getZipFile(case['zip'])
+    ts = pyalaocl.useocl.tester.ZipTestSuite(zipFileId)
+    assert len(ts.filesByExtension['.use']) == case['use']
+    assert len(ts.filesByExtension['.soil']) == case['soil']
+    assert ts.nbOfAssertionViolations == case['violations']
+    assert ts.nbOfAssertionEvaluations == case['evaluation']
+
