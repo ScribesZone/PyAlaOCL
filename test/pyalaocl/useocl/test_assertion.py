@@ -32,7 +32,15 @@ def testGenerator_extractAssertion():
                  'parsed': """[('Department', 'MoreEmployeesThanProjects', True), ('Employee', 'MoreProjectsHigherSalary', True), ('Project', 'BudgetWithinDepartmentBudget', True), ('Project', 'EmployeesInControllingDepartment', True)]""",
                  'withInv':"""[Assert(Department::MoreEmployeesThanProjects,True), Assert(Employee::MoreProjectsHigherSalary,True), Assert(Project::BudgetWithinDepartmentBudget,True), Assert(Project::EmployeesInControllingDepartment,True)]"""
 
-    },
+                },
+                {'state': 'DemoEmpty.soil',
+                 'parsed': """[('Department', 'MoreEmployeesThanProjects', True)]""",
+                 'withInv': """[Assert(Department::MoreEmployeesThanProjects,True)]""",
+                },
+                {'state': 'DemoIncorrectAssertions2.soil',
+                 'parsed': """[('Department', 'MoreEmployeesThanProjects', True), ('ERROR', 'MoreProjectsHigherSalary', True), ('Project', 'ERROR', False), ('Project', 'EmployeesInControllingDepartment', False)]""",
+                 'withInv': """[Assert(Department::MoreEmployeesThanProjects,True), Assert(INCORRECT:ERROR::MoreProjectsHigherSalary,True), Assert(INCORRECT:Project::ERROR,False), Assert(Project::EmployeesInControllingDepartment,False)]"""
+                },
           ]
         }
     ]
