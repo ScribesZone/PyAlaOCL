@@ -79,6 +79,9 @@ class UseEvaluationResults(object):
         self.modelEvaluationMap = OrderedDict()
         """ dict(str,ModelEvaluation) """
 
+        self.nbOfEmptyStateFiles = len(self.emptyStateFiles)
+        self.hasEmptyStateFiles = self.nbOfEmptyStateFiles > 0
+
         self.commandExitCode = \
             USEEngine.evaluateSoilFilesWithUSEModel(
                 self.modelFile,
