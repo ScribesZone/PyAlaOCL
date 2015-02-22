@@ -1,0 +1,22 @@
+-- @assert Department::MoreEmployeesThanProjects OK
+-- @assert ERROR::MoreProjectsHigherSalary OK           # INCORREC
+-- @assert Project::ERROR KO                            # INCORREC
+-- @assert Project::EmployeesInControllingDepartment KO # MUST FAIL
+
+-- model: Demo.use
+-- use> check -d
+-- checking structure...
+-- Multiplicity constraint violation in association `WorksIn':
+--    Object `djamel' of class `Employee' is connected to 0 objects of class `Department'
+--    at association end `department' but the multiplicity is specified as `1..*'.
+-- checking invariants...
+-- checking invariant (1) `Department::MoreEmployeesThanProjects': OK.
+-- checking invariant (2) `Employee::MoreProjectsHigherSalary': OK.
+-- checking invariant (3) `Project::BudgetWithinDepartmentBudget': OK.
+-- checking invariant (4) `Project::EmployeesInControllingDepartment': OK.
+-- checked 4 invariants in 0.019s, 0 failures.
+
+
+!create djamel : Employee
+!djamel.name := 'Djamel'
+!djamel.salary := 2600

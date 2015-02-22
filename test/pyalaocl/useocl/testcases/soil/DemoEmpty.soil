@@ -1,0 +1,8 @@
+-- In this file we have some comments and assertions but no
+-- actions. Such empty file can cause a infinite loop in use ocl
+-- and should therefore be eliminated
+--
+-- @assert Department::MoreEmployeesThanProjects OK
+--
+--
+
