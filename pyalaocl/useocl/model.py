@@ -5,6 +5,11 @@ Partial AST for USE OCL Model. The elements in this module are generated
 by the "parser" module.
 """
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+log = logging.getLogger('test.' + __name__)
+
 from collections import OrderedDict
 import abc
 
@@ -43,6 +48,7 @@ class Model(SourceElement):
 
 
     def findAssociationOrAssociationClass(self, name):
+        log.debug('findAssociationOrAssociationClass:%s', name)
         if name in self.associations:
             return self.associations[name]
         elif name in self.associationClasses:
@@ -53,12 +59,17 @@ class Model(SourceElement):
 
 
     def findRole(self, associationOrAssociationClassName, roleName):
+        log.debug('findRole: %s::%s',
+                  associationOrAssociationClassName, roleName)
         a = self.findAssociationOrAssociationClass(
                     associationOrAssociationClassName)
+
+        log.debug('findRole:  %s ',a)
+        log.debug('findRole:  %s ',a.roles)
         if roleName in a.roles:
             return a.roles[roleName]
         else:
-            raise Exception('ERROR - No "%s" role on association %s' %
+            raise Exception('ERROR - No "%s" role on association(class) %s' %
                             (roleName, associationOrAssociationClassName)  )
 
 
