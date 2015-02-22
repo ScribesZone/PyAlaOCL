@@ -22,39 +22,72 @@ import re
 
 class InvariantAssertionEvaluation(object):
     """
-    The evaluation of an InvariantAssertion agains a model.
-    Could be OK if the result is the one expected or KO if this is not the
-    case.
+    The evaluation of an InvariantAssertion against a model if thr
+    assertion is correct. If the assertion is incorrect then the evaluation
+    is a failure. The status can therefore have three values:
+
+    - 'OK': the assertion is correct and it evaluate to the expected result,
+    - 'KO': the assertion is correct and it evaluate to a unepected result,
+    - 'Failure': the assertion is incorrect
     """
+
     def __init__(self, invariantAssertion, actualResult):
         self.assertion = invariantAssertion
-
+        if self.assertion.isCorrect:
+            if actualResult == self.assertion.expectedResult:
+                status = 'OK'
+            else:
+                status = 'KO'
+        else:
+            status = 'Failure'
         self.actualResult = actualResult
-        self.isOK = actualResult == self.assertion.expectedResult
+        self.status = status
 
     def __repr__(self):
-        return 'Assert(%s=%s,%s)' % (
-            self.assertion.invariant,
-            self.assertion.expectedResult,
-            "OK" if self.isOK else "KO"
-        )
+        if self.status == 'Failure':
+            return 'Assert(%s,%s)' % (
+                self.assertion,
+                self.status
+            )
+        else:
+            return 'Assert(%s=%s,%s)' % (
+                self.assertion.invariant,
+                self.assertion.expectedResult,
+                self.status
+            )
 
 
 class InvariantAssertion(object):
     """
-    An InvariantAssertion bound to an invariant of a given model.
+    An InvariantAssertion bound to an invariant of a given model or
+    an invalid InvariantAssertion if the invariant cannot be found.
     Just indicates what is the expected result for this invariant.
     """
-    def __init__(self, stateFile, invariant, expectedResult):
+    def __init__(self, useModel, stateFile,
+                 className, invariantName, expectedResult):
         self.stateFile = stateFile
-        self.invariant = invariant
-        """ pyalaocl.useocl.model.Invariant """
+        self.className = className
+        self.invariantName = invariantName
+        self.useModel = useModel
+        try:
+            # TODO: improve to support None as class name
+            self.invariant = useModel.findInvariant(className, invariantName)
+        except:
+            self.invariant = None
+        self.isCorrect = self.invariant is not None
+        """ bool """
 
         self.expectedResult = expectedResult
         """ bool """
 
+
     def __repr__(self):
-        return 'Assert(%s,%s)' % (self.invariant, self.expectedResult)
+        if self.isCorrect:
+            return 'Assert(%s,%s)' % (self.invariant, self.expectedResult)
+        else:
+            return ('Assert(INCORRECT:%s::%s,%s)'
+                % (self.className, self.invariantName, self.expectedResult))
+
 
 
 def _extractAssertionsFromFile(useModel, soilFile):
@@ -71,14 +104,8 @@ def _extractAssertionsFromFile(useModel, soilFile):
     _ = []
     triples = _extractAssertionStringsFromFile(soilFile)
     for (class_name, inv_name, result) in triples:
-        try:
-            # TODO: improve to support None as class name
-            inv = useModel.findInvariant(class_name, inv_name)
-        except:
-            raise Exception('error with assertion in %s: %s::%s not found' %
-                            (soilFile, class_name, inv_name))
-        else:
-            _.append(InvariantAssertion(soilFile, inv, result))
+        ia=InvariantAssertion(useModel, soilFile, class_name, inv_name, result)
+        _.append(ia)
     return _
 
 
