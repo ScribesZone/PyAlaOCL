@@ -228,8 +228,9 @@ class UseOCLModel(pyalaocl.utils.sources.SourceFile):
             #    r'( : (?P<type>(\w|,|\))+))?' \
             #    r'( =)?'
             m = re.match(r, line)
-            if m:
+            if m and '(' in line and ')' in line:
                 if current_class is not None:
+                    # print line
                     # This could be an association class
                     operation = \
                         pyalaocl.useocl.model.Operation(
