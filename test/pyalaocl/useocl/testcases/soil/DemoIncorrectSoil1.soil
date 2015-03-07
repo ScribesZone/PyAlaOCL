@@ -1,0 +1,8 @@
+-- this file should be considered as empty
+
+-- @assert Department::MoreEmployeesThanProjects OK
+-- @assert ERROR::MoreProjectsHigherSalary OK           # INCORREC
+-- @assert Project::ERROR KO                            # INCORREC
+-- @assert Project::EmployeesInControllingDepartment KO # MUST FAIL
+
+?create djamel : Employee

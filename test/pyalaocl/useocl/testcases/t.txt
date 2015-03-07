@@ -1,0 +1,2 @@
+<input>:line 1:5 missing EOF at 'is'
+Error: Unknown command `dfdfsdf'. Try `help'.
