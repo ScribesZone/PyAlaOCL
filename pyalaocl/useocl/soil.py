@@ -15,11 +15,11 @@ from pyalaocl.useocl.state import State, Object, Link, LinkObject
 
 
 
-def isEmptySoilFile(file):
+def isNonEmptySoilFile(file):
     with open(file) as f:
         content = f.read()
     match = re.search(r'(^ *!)|(^ *open)', content, re.MULTILINE)
-    return match is None
+    return match is not None
 
 
 class UseSoilSpecification(object):

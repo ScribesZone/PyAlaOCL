@@ -1,6 +1,0 @@
--- @assert Department::MoreEmployeesThanProjects OK
--- @assert ERROR::MoreProjectsHigherSalary OK           # INCORREC
--- @assert Project::ERROR KO                            # INCORREC
--- @assert Project::EmployeesInControllingDepartment KO # MUST FAIL
-
-! here is an error create djamel : Employee

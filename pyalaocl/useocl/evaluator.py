@@ -1,17 +1,9 @@
 # coding=utf-8
 """
-Evaluate a set of USE OCL states against a given USE OCL model and build the
+Evaluate a set of USE OCL states against a given USE OCL model and store the
 evaluation result. This evaluation result is basically a map yielding for
-each valid state file the corresponding ModelEvaluation (either a instance of
-ModelValidation or an instance of ModelFailure.
-
-Valid state files are state files that are non empty and that do not return
-errors when evaluated with the USE OCL model. That is empty state files and
-erroneous files are filtered out. If no state files remains the result is
-said to be incorrect (not isCorrect) otherwise it is correct (isCorrect).
-
-This evaluator check just parse USE OCL results but do NOT deal with
-assertion. See Tester for that aspect.
+each state file the corresponding ModelEvaluation (either ModelValidation or
+ModelFailure indeed).
 """
 
 import logging
@@ -70,95 +62,52 @@ class UseEvaluationResults(object):
         :type stateFiles: [str]
 
         """
-        assert isinstance(useOCLModel, UseOCLModel)
         log.info('UseEvaluationResults.__init__(%s)', str(len(soilFiles)))
         self.useOCLModel = useOCLModel
 
         self.modelFile = self.useOCLModel.fileName
         """ [str] """
 
-        self.allStateFiles = soilFiles
-        """ [str] """
-
         self.emptyStateFiles = []   # computed by __filterNonEmptyStateFiles
         """ [str] """
 
-        # com.  by __filterErroneousStateFiles
-        self.erroneousStateFilesMap = OrderedDict()
-        """ dic(str,str) """   # fileName -> errors
-
-        self.stateFiles = soilFiles  # Will be filtered so could decrease
+        self.stateFiles = []        # computed by __filterNonEmptyStateFiles
         """ [str] """
 
-        self.__filterNonEmptyStateFiles()
-
-        self.__filterErroneousStateFiles()
+        self.__filterNonEmptyStateFiles(soilFiles)
 
         self.modelEvaluationMap = OrderedDict()
         """ dict(str,ModelEvaluation) """
 
         self.nbOfEmptyStateFiles = len(self.emptyStateFiles)
-        """ int """
-
         self.hasEmptyStateFiles = self.nbOfEmptyStateFiles > 0
-        """ bool """
 
-        if len(self.stateFiles) > 0:
-            log.info('Evaluating ')
-            self.commandExitCode = \
-                USEEngine.evaluateSoilFilesWithUSEModel(
-                    self.modelFile,
-                    self.stateFiles)
-            self.isCorrect = (self.commandExitCode == 0)
-            if self.isCorrect:
-                self.output_text = USEEngine.outAndErr
-                self.__parseValidationOutput(self.output_text)
-            else:
-                self.output_text = (
-                    'INCORRECT EXECUTION: errCode=%s' % self.commandExitCode)
+        self.commandExitCode = \
+            USEEngine.evaluateSoilFilesWithUSEModel(
+                self.modelFile,
+                self.stateFiles)
+        self.wasExecutionValid = (self.commandExitCode == 0)
 
-        else:
-            self.isCorrect = False
-            self.output_text = 'NO EXECUTION : NO NON-EMPTY SOIL FILES'
-
+        if self.wasExecutionValid:
+            self.output_text = USEEngine.outAndErr
+            self.__parseValidationOutput(self.output_text)
 
 
     def __repr__(self):
-        if self.isCorrect:
-            return ('UseEvaluationResults(commandExitCode=%s,modelEvaluations=%s)'
-                    % ( self.commandExitCode, self.modelEvaluationMap) )
-        else:
-            return 'UseEvaluationResults(INVALID_EXECUTION)'
+        return ('UseEvaluationResults(commandExitCode=%s,modelEvaluations=%s)'
+                % ( self.commandExitCode, self.modelEvaluationMap) )
 
-    def __filterNonEmptyStateFiles(self):
+    def __filterNonEmptyStateFiles(self, files):
         """
-        Empty soil file should be removed because of a BUG in USE OCL
+        Empty soil file should be removed because of a BUG in
+        :return:
+        :rtype:
         """
-        for file in self.stateFiles:
-            if pyalaocl.useocl.soil.isEmptySoilFile(file):
-                log.warning('empty soil file: %s' % file)
+        for file in files:
+            if pyalaocl.useocl.soil.isNonEmptySoilFile(file):
+                self.stateFiles.append(file)
+            else:
                 self.emptyStateFiles.append(file)
-                self.stateFiles.remove(file)
-
-    def __filterErroneousStateFiles(self):
-        """
-        Erroneous State Files are removed as well
-        """
-        for file in list(self.stateFiles):
-            log.info('Checking individually state file for errors: %s'%file)
-            USEEngine.checkSoilFileWithUSEModel(self.modelFile, file)
-            if USEEngine.commandExitCode != 0 or USEEngine.err != '':
-                log.warning('erroneous soil file: %s' % file)
-                if USEEngine.commandExitCode != 0:
-                    errors = 'USE exit with code %s\n%s' % (
-                        USEEngine.commandExitCode,
-                        USEEngine.err)
-                else:
-                    errors = USEEngine.err
-                self.erroneousStateFilesMap[file] = errors
-                self.stateFiles.remove(file)
-        log.info('%s  errorneous file(s). %s remaining.' %
-                 (len(self.erroneousStateFilesMap), len(self.stateFiles)))
 
 
     def __parseValidationOutput(self, text):
