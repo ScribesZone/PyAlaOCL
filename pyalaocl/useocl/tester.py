@@ -1,7 +1,11 @@
 # coding=utf-8
 
 """
-Support for testing USE OCL specifications.
+Support for testing USE OCL specifications. The
+UseEvaluationAndAssertionResults class extends the UseEvaluationResults
+with the evaluation and results of assertions in soil file.
+This class also provide support for USE OCL TestSuite, in particular in the
+form of zip files.
 """
 
 import logging
@@ -15,6 +19,7 @@ import pyalaocl.useocl.model
 import pyalaocl.useocl.analyzer
 import pyalaocl.useocl.evaluator
 import pyalaocl.useocl.assertion
+import pyalaocl.useocl.soil
 
 
 
@@ -35,46 +40,77 @@ class UseEvaluationAndAssertionResults(
         self.assertionEvaluationsByStateFile = OrderedDict()
         """ dict(str,[InvariantAssertionEvaluation]) """
 
-        self.assertionViolations = []
-        """ [InvariantAssertionEvaluation] """
+        self.assertionEvaluationsByStatus = OrderedDict()
+        """ dict(str,[InvariantAssertionEvaluation]) """
 
+        for status in ['OK', 'KO', 'Failure']:
+            self.assertionEvaluationsByStatus[status] = []
 
-        if self.wasExecutionValid:
+        #--- evaluate all valid state files
+        # (empty and erroneous files skipped)
+        if self.isCorrect:
             for state_file in self.stateFiles:
-                self.__evaluateAssertionsForState(state_file)
+                self.__evaluateAssertionsFromState(state_file)
 
-        self.__buildSummmary()
-
-        self.nbOfAssertionViolations = len(self.assertionViolations)
-        self.hasViolatedAssertions = self.nbOfAssertionViolations > 0
+        self.nbOfAssertionViolations = \
+            len(self.assertionEvaluationsByStatus['KO'])
+        self.hasAssertionViolations = self.nbOfAssertionViolations > 0
+        self.nbOfAssertionFailures = \
+            len(self.assertionEvaluationsByStatus['Failure'])
+        self.hasAssertionFailures = self.nbOfAssertionFailures > 0
         self.nbOfAssertionEvaluations = \
-            sum(map(len,self.assertionEvaluationsByStateFile.values()))
+            sum(map(len, self.assertionEvaluationsByStateFile.values()))
 
-    def __evaluateAssertionsForState(self, stateFile):
+
+    def __evaluateAssertionsFromState(self, stateFile):
         """
-        Set assertionEvaluationsMap[stateFile} for the given file
+        Evaluatin the assertions contained in the given state file.
+        Set assertionEvaluationsByStateFile[stateFile}
+        as well as assertionEvaluationsByStatus.
         :param stateFile: the state file to process
         :type stateFile: str
         """
+        log.debug('__evaluateAssertionsForState(%s)' % stateFile)
         self.assertionEvaluationsByStateFile[stateFile] = []
-        model = self.useOCLModel.model
         for assertion in pyalaocl.useocl.assertion._extractAssertionsFromFile(
-                model, stateFile):
+                self.useOCLModel.model, stateFile):
+            self.__evaluateAssertion(assertion)
+
+
+
+    def __evaluateAssertion(self, assertion):
+        log.debug('--- __evaluateAssertion(%s)' % assertion)
+
+        if assertion.isCorrect:
+            # get the actual result from the invariant evaluation
             inv = assertion.invariant
-            modelEvaluation = self.modelEvaluationMap[stateFile]
-            invEvaluation = modelEvaluation.invariantEvaluations[inv]
-            ae = pyalaocl.useocl.assertion.InvariantAssertionEvaluation(
-                assertion, invEvaluation. isOK)
-            self.assertionEvaluationsByStateFile[stateFile].append(ae)
+            if assertion.stateFile not in self.modelEvaluationMap:
+                print '###    ', assertion.stateFile
+                print '### IS NOT IN'
+                for e in self.modelEvaluationMap.keys():
+                    pass # print "#      ",e
+                print '### EMPTY STATE FILES: %s' % self.nbOfEmptyStateFiles
+                for e in self.emptyStateFiles:
+                    print "#      ", e
+                print '### STATE FILES : %s' % len(self.stateFiles)
+                print '### EVAL MAP: %s' % len(self.modelEvaluationMap.keys())
+                print '$$$'
+                with open(r'c:\tmp\output.txt','w') as f:
+                    f.write(self.output_text)
+            model_evaluation = self.modelEvaluationMap[assertion.stateFile]
 
 
-    def __buildSummmary(self):
-        self.assertionViolations = [
-            ae
-                for aes in self.assertionEvaluationsByStateFile.values()
-                for ae in aes
-                if not ae.isOK
-        ]
+            inv_evaluation = model_evaluation.invariantEvaluations[inv]
+            actual_result = inv_evaluation.isOK
+        else:
+            # the assertion is not correct, so actual_result does not matter
+            actual_result = None
+        ae = pyalaocl.useocl.assertion.InvariantAssertionEvaluation(
+            assertion, actual_result)
+        # add the evaluation to the proper lists
+        self.assertionEvaluationsByStateFile[assertion.stateFile].append(ae)
+        self.assertionEvaluationsByStatus[ae.status].append(ae)
+
 
 
 class TestSuite(UseEvaluationAndAssertionResults):
@@ -94,19 +130,47 @@ import urllib
 import shutil
 
 
+
+
 class ZipTestSuite(TestSuite):
+    """
+    Test suite represented as a local or remote zip file
+    The _compute methods can be overriden if needed to change the behavior
+    of this class.
+    """
     __test__ = False  # To avoid being taken as a test by nose
 
     def __init__(self, zipFileId, testId=None,
-                 targetDirectory = None, extractOnly=('.soil', '.use')):
+                 targetDirectory = None, extractOnly=('.soil', '.use'),
+                 useFileShortName = None):
+        """
+        Build a USE OCL test suite by extracting the .use file and .soil
+        file from an archive.
+        :param zipFileId: A URL to a zip file (in this case it will be
+        downloaded) or a path to a local zip file.
+        :type zipFileId: str
+        :param testId:
+        :type testId:
+        :param targetDirectory: The directory where to extract the zip file.
+        :type targetDirectory: str
+        :param extractOnly: A list of extensions with (e.g. ".soil"). Only
+            files with these extensions will be extracted. If none, all files
+            will be extracted.
+        :type extractOnly: [str]
+        :param useFileShortName:
+        :type useFileShortName:
+        :return:
+        :rtype:
+        """
         self.zipFileId = zipFileId
         self.targetDirectory = targetDirectory
         self.extractOnly = extractOnly
-        self.isZipRemote = None                # computed in _computeZipFile
-        self.zipFile = None                    # computed in _computeZipFile
-        self.directory = None                  # Computed in __extractZipFile
-        self.entries = []                      # Computed in __extractZipFile
-        self.filesByExtension = {}             # Computed in __extractZipFile
+        self.isZipRemote = None                 # computed in _computeZipFile
+        self.zipFile = None                     # computed in _computeZipFile
+        self.directory = None                   # Computed in __extractZipFile
+        self.useFileShortName = useFileShortName
+        self.entries = []                       # Computed in __extractZipFile
+        self.filesByExtension = {}              # Computed in __extractZipFile
         self._computeZipFile()
         self.__extractZipFile()
         self._checkZipTestSuite()
@@ -118,28 +182,42 @@ class ZipTestSuite(TestSuite):
 
     def free(self, targetDirectoryToBeRemoved=None):
         """
-        Free temporary resources if any.
+        Try to Free temporary resources if any.
         If a targetDirectory is specified as a parameter, check if this was
         the same directory given when the ZipTestSuite was created and if
         this is so, remove this whole directory.
+        If a file or directory cannot be removed just add a warning in the
+        log. This may be because another process is using the file.
         """
         if self.isZipRemote:
             log.info('Removing temporary local zip file: %s', self.zipFile)
-            os.remove(self.zipFile)
+            try:
+                os.remove(self.zipFile)
+            except:
+                log.warning('Cannot remove %s' % self.zipFile)
+
         if self.targetDirectory is None:
             log.info(
                 'Removing temporary directory %s (used to extract zip file)'
                 % self.directory)
-            shutil.rmtree(self.directory)
+            try:
+                shutil.rmtree(self.directory)
+            except:
+                log.warning('Cannot remove directory %s' % self.directory)
         else:
             if targetDirectoryToBeRemoved == self.targetDirectory:
                 log.info('Removing target directory as requested: %s'
                          % targetDirectoryToBeRemoved)
-                shutil.rmtree(targetDirectoryToBeRemoved)
+                try:
+                    shutil.rmtree(targetDirectoryToBeRemoved)
+                except:
+                    log.warning('Cannot remove directory %s'
+                                % targetDirectoryToBeRemoved)
             else:
                 raise Exception(
                     'ERROR: trying to free %s while %s was created. No removal'
                     % (targetDirectoryToBeRemoved, self.targetDirectory))
+
 
 
     def _computeZipFile(self):
@@ -158,6 +236,7 @@ class ZipTestSuite(TestSuite):
                 % (self.zipFileId, self.zipFile))
             urllib.urlretrieve(self.zipFileId, self.zipFile)
         else:
+
             self.zipFile = self.zipFileId
 
 
@@ -176,12 +255,20 @@ class ZipTestSuite(TestSuite):
 
 
     def _computeUseFile(self):
-        print '----', self.filesByExtension
-        use_files = self.filesByExtension['.use']
-        if len(use_files) == 1:
-            return use_files[0]
+        """
+        Return the name of the file corresponding "the" .use file.
+        :return:
+        :rtype:
+        """
+        if self.useFileShortName is None:
+            files = self.filesByExtension['.use']
         else:
-            raise Exception('More than one .use file: %s'  % use_files )
+            files = [file for file in self.filesByExtension['.use']
+                     if os.path.basename(file) == self.useFileShortName]
+        if len(files) == 1:
+            return files[0]
+        else:
+            raise Exception('More than one .use file: %s'  % files )
 
 
     def _computeStateFiles(self):
@@ -192,6 +279,7 @@ class ZipTestSuite(TestSuite):
         :rtype: [str]
         """
         return self.filesByExtension['.soil']
+
 
     def _computeSelectEntry(self, file):
         """
@@ -206,6 +294,7 @@ class ZipTestSuite(TestSuite):
             self.extractOnly is None
             or (self.extractOnly is not None
                 and extension in self.extractOnly))
+
 
     def _checkZipTestSuite(self):
         pass
@@ -254,19 +343,14 @@ class ZipTestSuite(TestSuite):
             self.filesByExtension[extension].append(expected)
         return expected
 
-class CrossTestSuite(object):
+
+
+
+
+class CrossZipTestSuite(object):
     __test__ = False  # To avoid being taken as a test by nose
-    pass
-
-
-
-
-
-
-
-
-
-
-
-
+    def __init__(self, idsAndZips,
+                 targetDirectory=None, extractOnly=('.soil', '.use')):
+        for (id,zip) in idsAndZips:
+            pass
 

@@ -59,15 +59,20 @@ class USEEngine(object):
 
 
     @classmethod
-    def __execute(cls, useFile, soilFile, errWithOut=False):
+    def __execute(cls, useFile, soilFile, errWithOut=False,
+                  executionDirectory=None):
         """ Execute use command with the given model and given soil file.
-        The soil file must terminate by a 'quit' statement so that the process
-        finish.
+        The soil file MUST terminate by a 'quit' statement so that the process
+        finish. The process is executed in the specified 'executionDirectory'.
+        If not specified the execution directory is set to the directory
+        of the use file given as a parameter. This directory could be
+        important if the soil files contains references to relative path.
+        This is in particular the case of 'open file.soil' statements.
         """
         def readAndRemove(filename):
             with open(filename, 'r') as f:
                 _ = f.read()
-            os.remove(filename)
+            # FIXME os.remove(filename)
             return _
 
         if errWithOut:
@@ -93,10 +98,16 @@ class USEEngine(object):
         cls.command = (commandPattern
                            % (cls.USE_OCL_COMMAND, useFile, soilFile))
 
+        cls.directory = executionDirectory if executionDirectory is not None \
+                    else os.path.dirname(os.path.abspath(useFile))
+        previousDirectory = os.getcwd()
+
         # Execute the command
-        log.info('Execute USE OCL: %s', cls.command)
+        log.info('Execute USE OCL in %s: %s', cls.directory, cls.command)
+        os.chdir(cls.directory)
         cls.commandExitCode = os.system(cls.command)
-        log.info('Execute USE OCL returned %s exit code', cls.commandExitCode)
+        os.chdir(previousDirectory)
+        log.info('        execution returned %s exit code', cls.commandExitCode)
 
         if errWithOut:
              if cls.commandExitCode != 0:
@@ -105,7 +116,22 @@ class USEEngine(object):
                  cls.outAndErr = readAndRemove(output_filename)
         else:
             cls.out = readAndRemove(output_filename)
+            log.info ('        with output of %s lines',
+                      len(cls.out.split('\n')))
+            # log.debug('----- output -----')
+            # log.debug(cls.out)
+            # log.debug('----- end of output ------')
+
             cls.err = readAndRemove(errors_filename)
+            if len(cls.err) > 0:
+                log.info('        WITH ERRORS of %s lines:',
+                         len(cls.err.split('\n'))   )
+                for err_line in cls.err.split('\n'):
+                    if err_line != '':
+                        log.debug('         ERROR: %s',err_line)
+            # log.debug('----- errors -----')
+            # log.debug(cls.err)
+            # log.debug('----- end of errors ------')
 
         return cls.commandExitCode
 
@@ -143,6 +169,21 @@ class USEEngine(object):
         return cls.commandExitCode
 
 
+    @classmethod
+    def checkSoilFileWithUSEModel(cls, modelFile, stateFile):
+        driver_sequence = 'open %s \nquit' % stateFile
+        (f, driver_filename) = tempfile.mkstemp(suffix='.soil', text=True)
+        os.close(f)
+        with open(driver_filename, 'w') as f:
+            f.write(driver_sequence)
+
+        cls.__execute(
+            modelFile,
+            driver_filename,
+            errWithOut=False)
+
+        return cls.commandExitCode
+
 
     @classmethod
     def evaluateSoilFilesWithUSEModel(cls, modelFile, stateFiles):
@@ -171,6 +212,8 @@ class USEEngine(object):
             :return: The soil text
             :rtype: str
             """
+            if len(stateFiles) == 0:
+                raise Exception('Error: no state file to evaluate')
             lines = reduce(operator.add,
                            map(
                                lambda file: ['reset', 'open ' + file,
@@ -180,6 +223,8 @@ class USEEngine(object):
             return '\n'.join(lines)
 
         #-- generate soil driver
+        if len(stateFiles) == 0:
+            raise Exception('Error: no state file to evaluate')
         driver_sequence = __generateSoilValidationDriver(stateFiles)
         (f, driver_filename) = tempfile.mkstemp(suffix='.soil', text=True)
         os.close(f)
