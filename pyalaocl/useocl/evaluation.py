@@ -8,11 +8,21 @@ from collections import OrderedDict
 from abc import ABCMeta
 import os.path
 
+
+
+#------------------------------------------------------------------------------
+#   Model level
+#------------------------------------------------------------------------------
+
 class ModelEvaluation(object):
     """
     Result of the evaluation of a USE OCL state against a USE OCL model.
-    This could either be a ModelValidation if the state is valid,
-    or a ModelViolation otherwise.
+    This is an abstract class. In practice this could either be a
+    ModelValidation if the state is valid, that is there is absolutely
+    no errors. If there is at least one error, then this will be
+    a ModelViolation.
+    A ModelEvaluation contains a map of InvariantEvaluation as well
+    as a map of CardinalityEvaluation.
     """
     __metaclass__ = ABCMeta
 
@@ -20,12 +30,16 @@ class ModelEvaluation(object):
     def __init__(self, model, state = None):
         self.model = model
         self.state = state
+
         """ str """
         self.stateShortName = os.path.splitext(os.path.basename(self.state))[0]
         self.isValidated = None  # abstract attribute. Filled by subclasses.
 
         self.invariantEvaluations = OrderedDict()
         """ dict(Invariant, InvariantEvaluation) """
+
+        self.cardinalityViolations = OrderedDict()
+        """ dict(Role, [CardinalityViolation] ) """
 
 
     def getInvariantEvaluation(self,
@@ -35,21 +49,12 @@ class ModelEvaluation(object):
         return self.invariantEvaluations[inv]
 
 
-class InvariantEvaluation(object):
-    __metaclass__ = ABCMeta
-
-    def __init__(self, modelEvaluation, invariant):
-        self.modelEvaluation = modelEvaluation
-        self.invariant = invariant
-        self.modelEvaluation.invariantEvaluations[invariant] = self
-        self.isOK = None # set in subclasses. A bool.
-
-
 class ModelValidation(ModelEvaluation):
     """
     Result of the positive evaluation of a USE OCL state against a USE OCL
-    model. Nothing particular to be stored.
+    model. Nothing particular to be stored as there is no error.
     """
+
     def __init__(self, model, state):
         ModelEvaluation.__init__(self, model, state)
         self.isValidated = True
@@ -60,6 +65,41 @@ class ModelValidation(ModelEvaluation):
 
     def __repr__(self):
         return 'Valid(%s)' % self.stateShortName
+
+
+class ModelViolation(ModelEvaluation):
+    """
+    Result of the negative evaluation of a USE OCL state against a USE OCL
+    model. Store invariants violations and/or cardinality violations.
+    """
+
+    def __init__(self, model, state):
+        ModelEvaluation.__init__(self, model, state)
+        self.isValidated = True
+
+
+    def __repr__(self):
+        return 'Violation(%s,INV(%s),ROLE(%s))' % (
+            self.stateShortName,
+            ','.join(map(str, self.invariantEvaluations.values())),
+            ','.join(map(str, self.cardinalityViolations.keys())))
+
+
+
+#------------------------------------------------------------------------------
+#   Invariant and Cardinality level
+#------------------------------------------------------------------------------
+
+class InvariantEvaluation(object):
+    """ Result of the evaluation of an invariant. This is an abstract class.
+    """
+    __metaclass__ = ABCMeta
+
+    def __init__(self, modelEvaluation, invariant):
+        self.modelEvaluation = modelEvaluation
+        self.invariant = invariant
+        self.modelEvaluation.invariantEvaluations[invariant] = self
+        self.isOK = None # set in subclasses. A bool.
 
 
 
@@ -82,28 +122,6 @@ class InvariantValidation(InvariantEvaluation):
 
 
 
-class ModelViolation(ModelEvaluation):
-    """
-    Result of the negative evaluation of a USE OCL state agains a USE OCL
-    model. Store invariants violations and/or cardinality violations.
-    """
-
-    def __init__(self, model, state):
-        ModelEvaluation.__init__(self, model, state)
-        self.isValidated = True
-
-        self.cardinalityViolations = OrderedDict()
-        """ dict(Role, [CardinalityViolation] ) """
-
-
-    def __repr__(self):
-        return 'Violation(%s,INV(%s),ROLE(%s))' % (
-            self.stateShortName,
-            ','.join(map(str,self.invariantEvaluations.values())),
-            ','.join(map(str,self.cardinalityViolations.keys())))
-
-
-
 class InvariantViolation(InvariantEvaluation):
     """
     Invariant violation.
@@ -123,6 +141,7 @@ class InvariantViolation(InvariantEvaluation):
 
     def __repr__(self):
         return '%s=KO' % self.invariant.name
+
 
 
 class CardinalityViolation(object):
