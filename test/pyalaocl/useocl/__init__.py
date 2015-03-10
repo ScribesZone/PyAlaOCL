@@ -28,6 +28,10 @@ def getSoilFileList(nameOrList):
         return map(getSoilFile, nameOrList)
 
 def getZipFile(name):
+    for prefix in ['http:','https:','ftp:','ftps:']:
+        if name.startswith(prefix):
+
+            return name
     return getFile(name, ['zip'])
 
 def setup():
