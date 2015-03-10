@@ -124,9 +124,11 @@ class USEEngine(object):
 
             cls.err = readAndRemove(errors_filename)
             if len(cls.err) > 0:
-                log.info('        WITH ERRORS of %s lines:',
-                         len(cls.err.split('\n'))   )
-                for err_line in cls.err.split('\n'):
+                log.info(
+                    '        WITH ERRORS of %s lines: (first lines below)',
+                    len(cls.err.split('\n'))   )
+                LINE_COUNT = 3
+                for err_line in cls.err.split('\n')[:LINE_COUNT]:
                     if err_line != '':
                         log.debug('         ERROR: %s',err_line)
             # log.debug('----- errors -----')
