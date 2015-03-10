@@ -34,9 +34,9 @@ from collections import OrderedDict
 
 
 
-class Test_UseEvaluationResults_(DataTestSuite):
+class Test_UseEvaluationResults(DataTestSuite):
     # dataClass = DataTestCase_UseEvaluationResults
-    class dataClass(DataTestCase):
+    class DataTest(DataTestCase):
         def caseSetup(self):
             self.modelFile = getUseFile(self._case['model'])
             self.useModel = pyalaocl.useocl.analyzer.UseOCLModel(
@@ -194,38 +194,3 @@ class Test_UseEvaluationResults_(DataTestSuite):
         ]
 
 
-
-
-# def testGenerator_UseEvaluationResults():
-
-    # for case in test_cases:
-    #     model_file = getUseFile(case['model'])
-    #     use_model = pyalaocl.useocl.analyzer.UseOCLModel(model_file)
-    #     assert use_model.isValid   # we assume that this is ok
-    #
-    #     #-- get the state files from 'states'
-    #     state_files = [getSoilFile(soil_file) for soil_file in case['states']]
-
-#        yield check_UseEvaluationResults, use_model, state_files, case
-
-
-
-
-# def check_UseEvaluationResults(useModel, stateFiles, case):
-#     _ =  pyalaocl.useocl.evaluator.UseEvaluationResults(useModel, stateFiles)
-#     print 'isCorrect=', _.isCorrect
-#     print '   ', case['isCorrect']
-#     eq_(_.isCorrect,case['isCorrect'], 'isCorrect[%s]'% case['id'])
-#
-#     print 'emptyFiles=', _.emptyStateFiles
-#     eq_(len(_.emptyStateFiles), case['emptyFiles'], 'emptyFiles')
-#
-#     print 'errorFiles=', _.erroneousStateFilesMap.keys()
-#     eq_(len(_.erroneousStateFilesMap.keys()), case['errorFiles'], 'errorFiles')
-#
-#     print 'stateFiles=', _.stateFiles
-#     eq_(len(_.stateFiles), case['stateFiles'], 'stateFiles')
-#
-#     print 'evaluationsRepr=', repr(_.modelEvaluationMap.values())
-#     print '     ', case['evaluationsRepr']
-#     eq_(repr(_.modelEvaluationMap.values()),case['evaluationsRepr'])
