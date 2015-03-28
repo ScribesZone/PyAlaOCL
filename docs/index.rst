@@ -19,6 +19,7 @@ And last, but not least, PyAlaOCL can (optionally) be integrated in different py
 * jinja2_ integration. PyAlaOCL expressions can be written within jinja2_ templates, increasing the expression power of jinja2_.
 * jython_ integration. Java collections such as Set or List can be instrumented so that PyAlaOCL expressions work on them. This makes it possible to work with Java apis in a seamless way.
 * modelio_ integration. PyAlaOCL can be used in the context of modelio_, the open source UML_ environment, bringing *à la* OCL support to modelio_.
+* `USE OCL`_ integration. The integration with the `USE OCL`_ environment has been moved to its own project. See PyUseOCL_ documentation.
 
 The code is open source, and `available at github`_.
 
@@ -35,7 +36,6 @@ Documentation
    jinja2Integration
    jythonIntegration
    modelioIntegration
-   useoclIntegration
 
 
 Indices and tables
@@ -51,7 +51,8 @@ Indices and tables
 .. _python: https://www.python.org/
 .. _model transformation languages: http://en.wikipedia.org/wiki/Model_transformation_language
 .. _OCL specification: http://www.omg.org/spec/OCL/
-.. _USE OCL: http://sourceforge.net/projects/useocl/
+.. _`USE OCL`: http://sourceforge.net/projects/useocl/
+.. _PyUseOCL: http://pyuseocl.readthedocs.org
 .. _jinja2: http://jinja.pocoo.org/docs/dev/
 .. _jython: http://www.jython.org/
 .. _modelio: http://www.modelio.org/
