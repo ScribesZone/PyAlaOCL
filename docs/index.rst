@@ -1,25 +1,47 @@
 PyAlaOCL's Documentation
 ========================
 
-PyAlaOCL is a small framework that aims to bring features *à la* OCL_ to python_ world. OCL_ refers to the **Object Constraint Language** of UML_ (Unified Modeling Language).
+PyAlaOCL is a small framework that aims to bring features *à la* OCL_
+to python_ world. OCL_ refers to the **Object Constraint Language**
+of UML_ (Unified Modeling Language).
 
-PyAlaOCL does *not* provide a OCL interpreter implemented in python. It "just" allows python programmers familiar with OCL to write expressions *à la* OCL_ in python programs. For instance instead of writing the following OCL_ expression::
+PyAlaOCL does *not* provide a OCL interpreter implemented in python.
+It "just" allows python programmers familiar with OCL to write expressions
+*à la* OCL_ in python programs. For instance instead of writing the
+following OCL_ expression::
 
     Set{-3,2,-1,-2,-5}->excluding(2)->forAll(x|x<0)
 
-joe the programmer will write instead this python expression:
+joe the programmer will write instead this python expression::
 
     >>> Set(-3,2,-1,-2,-5).excluding(2).forAll(lambda x:x<0)
     True
 
-While the OCL_ syntax is not retained (python syntax can not be extended), the power of OCL_ is still there. Almost the full OCL_ library is supported including features like *closure* making it possible to write rather complex traversals in a rather concise and elegant way. Some additional operators are also added to take profit of python while keeping the spirit of OCL_.
+It is worth mentionning that while the OCL_ syntax is not
+retained (python syntax can not be extended), the **power of OCL_**
+is still there. Almost the full OCL_ library is supported including
+features like *closure*. This makes it possible to write rather complex
+traversals in a rather concise and elegant way *à la* OCL_.
+Moreover some *additional operators* are also added to take profit of
+python while keeping the spirit of OCL_.
 
-And last, but not least, PyAlaOCL can (optionally) be integrated in different python settings making it even more handy to use:
+And last, but not least, PyAlaOCL can (optionally) be integrated in
+different python settings making it even more handy to use:
 
-* jinja2_ integration. PyAlaOCL expressions can be written within jinja2_ templates, increasing the expression power of jinja2_.
-* jython_ integration. Java collections such as Set or List can be instrumented so that PyAlaOCL expressions work on them. This makes it possible to work with Java apis in a seamless way.
-* modelio_ integration. PyAlaOCL can be used in the context of modelio_, the open source UML_ environment, bringing *à la* OCL support to modelio_.
-* `USE OCL`_ integration. The integration with the `USE OCL`_ environment has been moved to its own project. See PyUseOCL_ documentation.
+*  jinja2_ integration. PyAlaOCL expressions can be written within jinja2_
+   templates, increasing the expression power of jinja2_.
+
+*  jython_ integration. Java collections such as Set or List can be
+   instrumented so that PyAlaOCL expressions work on them. This makes
+   it possible to work with Java apis in a seamless way.
+
+*  modelio_ integration. PyAlaOCL can be used in the context
+   of modelio_, the open source UML_ environment, bringing *à la* OCL support to modelio_.
+
+.. note::
+
+   The integration with the `USE OCL`_ environment
+   has been moved to its own project. See PyUseOCL_ documentation.
 
 The code is open source, and `available at github`_.
 
